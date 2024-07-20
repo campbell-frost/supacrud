@@ -4,7 +4,7 @@ import figlet from 'figlet'
 import chalk from 'chalk'
 
 export default class Hello extends Command {
-  static override description = 'Welcome to supaCRUD - A Supabase CRUD CLI'
+  static override description = 'Welcome to supaCRUD'
 
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -14,7 +14,7 @@ export default class Hello extends Command {
   static override flags = {
     table: Flags.string({
       char: 't',
-      description: 'Table name to perform CRUD operations on',
+      description: 'Table name to perform CRUD ops on',
       required: false,
     }),
   }
@@ -26,48 +26,49 @@ export default class Hello extends Command {
   private supabase: any
 
   public async run(): Promise<void> {
-    const { args, flags } = await this.parse(Hello)
+    const { args, flags } = await this.parse(Hello);
 
-    console.log(chalk.cyan(figlet.textSync('supaCRUD', { horizontalLayout: 'full' })))
-
-    this.log(chalk.green('Welcome to supaCRUD - Your Supabase CRUD CLI!'))
-
-    this.supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_KEY || ''
-    )
+    console.log(chalk.cyan(figlet.textSync('supaCRUD', { horizontalLayout: 'full' })));
+    try{
+      this.supabase = createClient(
+        process.env.SUPABASE_URL || '',
+        process.env.SUPABASE_KEY || ''
+      )
+    } catch (error){
+      this.log('\nError logging into supabase: ', error.message, '\n');
+    }
 
     if (args.name) {
-      this.log(chalk.yellow(`Hello, ${args.name}! Ready to perform some CRUD operations?`))
+      this.log(chalk.yellow(`Hello, ${args.name}!`));
     }
 
     if (flags.table) {
-      this.log(chalk.blue(`You've selected the "${flags.table}" table.`))
-      await this.showTableInfo(flags.table)
+      this.log(chalk.blue(`You've selected the "${flags.table}" table.`));
+      await this.showTableInfo(flags.table);
     } else {
-      this.log(chalk.magenta('Tip: Use the --table flag to specify a table for CRUD operations.'))
+      this.log(chalk.magenta('Tip: Use the --table flag to specify a table for CRUD operations.'));
     }
 
-    this.log(chalk.green('\nHappy CRUDing! 🚀'))
+    this.log(chalk.green('\nHappy CRUDing! 🚀'));
   }
 
   private async showTableInfo(tableName: string): Promise<void> {
     try {
       const { data, error } = await this.supabase
         .from(tableName)
-        .select('*')
-        .limit(1)
+        .select('*');
 
-      if (error) throw error
+      if (error) throw error;
 
       if (data && data.length > 0) {
-        this.log(chalk.cyan(`Table structure for "${tableName}":`))
-        this.log(chalk.gray(JSON.stringify(data[0], null, 2)))
+        this.log(chalk.cyan(`Table structure for "${tableName}":`));
+        this.log(chalk.gray(JSON.stringify(data[0], null, 2)));
       } else {
-        this.log(chalk.yellow(`The "${tableName}" table appears to be empty.`))
+        this.log(chalk.yellow(`The "${tableName}" table appears to be empty.`));
+        this.log(data);
       }
     } catch (error: any) {
-      this.error(chalk.red(`Error accessing "${tableName}" table: ${error.message}`))
+      this.error(chalk.red(`Error accessing "${tableName}" table: ${error.message}`));
     }
   }
 }
