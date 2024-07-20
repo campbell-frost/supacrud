@@ -2,8 +2,10 @@ import { Args, Command, Flags } from '@oclif/core'
 import { createClient } from '@supabase/supabase-js'
 import figlet from 'figlet'
 import chalk from 'chalk'
+import { getSupabaseConfig, getProjectDetails } from '../utils/supabaseConfig.js';
 
-export default class Hello extends Command {
+
+export default class SupaCRUD extends Command {
   static override description = 'Welcome to supaCRUD'
 
   static override examples = [
@@ -26,18 +28,17 @@ export default class Hello extends Command {
   private supabase: any
 
   public async run(): Promise<void> {
-    const { args, flags } = await this.parse(Hello);
+    const { args, flags } = await this.parse(SupaCRUD);
 
     console.log(chalk.cyan(figlet.textSync('supaCRUD', { horizontalLayout: 'full' })));
-    try{
-      this.supabase = createClient(
-        process.env.SUPABASE_URL || '',
-        process.env.SUPABASE_KEY || ''
-      )
-    } catch (error){
-      this.log('\nError logging into supabase: ', error.message, '\n');
-    }
 
+    try {
+      const { projectUrl, apiKey } = await getProjectDetails();
+      const supabase = createClient(projectUrl, apiKey);
+      this.log(`Connected to Supabase project at ${projectUrl}`);
+    } catch (error) {
+      this.error(`Failed to get Supabase configuration: ${error.message}`);
+    }
     if (args.name) {
       this.log(chalk.yellow(`Hello, ${args.name}!`));
     }

@@ -12,7 +12,9 @@
   "dependencies": {
     "@oclif/core": "^4.0.12",
     "@supabase/supabase-js": "^2.44.4",
+    "axios": "^1.7.2",
     "figlet": "^1.7.0",
+    "toml": "^3.0.0",
     "typescript": "^5.5.3"
   },
   "bin": {
