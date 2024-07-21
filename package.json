@@ -1,5 +1,5 @@
 {
-  "name": "supacrud",
+  "name": "supabase-crud-ops",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
