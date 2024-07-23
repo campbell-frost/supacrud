@@ -22,8 +22,18 @@ export default class SupaCRUD extends Command {
   private supabase: any;
   private configPath = path.join(this.config.configDir, 'config.json');
 
+  private async doesConfigExist(): Promise<boolean> {
+    if (!fs.existsSync(this.configPath)) {
+      await fs.promises.mkdir(path.dirname(this.configPath), { recursive: true });
+      await fs.promises.writeFile(this.configPath, '{}');
+      return false;
+    }
+    return true;
+  }
+
   private async loadConfig(): Promise<{ projectUrl: string; apiKey: string } | null> {
     try {
+      this.doesConfigExist();
       const config = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
       return config;
     } catch (error) {
@@ -60,7 +70,7 @@ export default class SupaCRUD extends Command {
 
   private async showTableInfo(tableName: string): Promise<void> {
     try {
-      const { data, error } = await this.supabase.from(tableName).select('*').limit(1);
+      const { data, error } = await this.supabase.from(tableName).select('*');
       if (error) throw error;
       if (data && data.length > 0) {
         this.log(chalk.cyan(`Table structure for "${tableName}":`));
