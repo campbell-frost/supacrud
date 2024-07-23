@@ -59,13 +59,30 @@ export default class SupaCRUD extends Command {
 
   private async connectToSupabase(): Promise<void> {
     let config = await this.loadConfig();
-    if (!config) {
-      this.log(chalk.yellow('No configuration found. Let\'s set up your Supabase connection.'));
-      config = await this.promptForSupabaseCredentials();
-      await this.saveConfig(config);
+    let connectionSuccessful = false;
+  
+    while (!connectionSuccessful) {
+      if (!config) {
+        this.log(chalk.yellow('No configuration found. Let\'s set up your Supabase connection.'));
+        config = await this.promptForSupabaseCredentials();
+        await this.saveConfig(config);
+      }
+  
+      try {
+        this.supabase = createClient(config.projectUrl, config.apiKey);
+        await this.supabase.from('_test').select('*').limit(1);
+        connectionSuccessful = true;
+        this.log(chalk.green(`Connected to Supabase project at ${config.projectUrl}`));
+      } catch (error: any) {
+        if (error.message.includes('Invalid URL')) {
+          this.log(chalk.red('Error: Invalid Supabase URL. Please enter your credentials again.'));
+          config = await this.promptForSupabaseCredentials();
+          await this.saveConfig(config);
+        } else {
+          throw error;
+        }
+      }
     }
-    this.supabase = createClient(config.projectUrl, config.apiKey);
-    this.log(chalk.green(`Connected to Supabase project at ${config.projectUrl}`));
   }
 
   private async showTableInfo(tableName: string): Promise<void> {
