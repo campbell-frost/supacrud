@@ -1,5 +1,5 @@
-import { input, password, select } from '@inquirer/prompts';
-import { Args, Command, Flags } from '@oclif/core';
+import { input, password, select, confirm } from '@inquirer/prompts';
+import {  Command, Flags } from '@oclif/core';
 import figlet from 'figlet';
 import chalk from 'chalk';
 import { SupabaseConnection } from '../utils/supabaseConnection.js';
@@ -11,12 +11,11 @@ export default class SupaCRUD extends Command {
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --table users',
+    '<%= config.bin %> <%= command.id %> --update-credentials',
   ];
   static override flags = {
     table: Flags.string({ char: 't', description: 'Table name to perform CRUD ops on', required: false }),
-  };
-  static override args = {
-    name: Args.string({ description: 'Your name', required: false }),
+    'update-credentials': Flags.boolean({ char: 'u', description: 'Update your Supabase credentials', required: false }),
   };
 
   private configManager: ConfigManager;
@@ -54,21 +53,42 @@ export default class SupaCRUD extends Command {
     await crudOperation.execute();
   }
 
+  private async updateCredentials(): Promise<void> {
+    const shouldUpdate = await confirm({
+      message: 'Are you sure you want to update your Supabase credentials?',
+    });
+
+    if (shouldUpdate) {
+      const projectUrl = await input({
+        message: 'Enter your Supabase project URL:',
+        validate: (value) => value.trim() !== '' || 'Project URL cannot be empty',
+      });
+
+      const apiKey = await password({
+        message: 'Enter your Supabase API key:',
+        validate: (value) => value.trim() !== '' || 'API key cannot be empty',
+      });
+
+      await this.configManager.saveConfig({ projectUrl, apiKey });
+      this.log(chalk.green('Credentials updated successfully!'));
+    }
+  }
+
   public async run(): Promise<void> {
-    const { args, flags } = await this.parse(SupaCRUD);
+    const { flags } = await this.parse(SupaCRUD);
     console.log(chalk.cyan(figlet.textSync('supaCRUD', { horizontalLayout: 'full' })));
 
     try {
-      await this.supabaseConnection.connect();
-
-      if (args.name) {
-        this.log(chalk.yellow(`Hello, ${args.name}!`));
+      if (flags['update-credentials']) {
+        await this.updateCredentials();
+        return;
       }
+
+      await this.supabaseConnection.connect();
 
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
       await this.performCRUDOperation(table);
-
       this.log(chalk.green('\nHappy CRUDing! 🚀'));
     } catch (error: any) {
       this.error(chalk.red(`An error occurred: ${error.message}`));
