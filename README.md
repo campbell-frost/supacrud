@@ -41,7 +41,7 @@ supaCRUD supports the following operations:
 4. **Delete**: Remove records from the table
 5. **All**: Add CRUD operations for all of the above
 
-For each table, supaCRUD generates corresponding .ts files in the data/<table-name>/ directory containing the CRUD operations for that table. This allows you to easily integrate these operations into your TypeScript projects.
+For each table, supaCRUD generates corresponding .ts files in the `data/<table-name>/` directory containing the CRUD operations for that table.
 
 ## First-Time Setup (current implementation)
 
