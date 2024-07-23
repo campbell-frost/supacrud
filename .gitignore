@@ -13,3 +13,4 @@ package-lock.json
 /.idea
 oclif.manifest.json
 supabase
+data/
