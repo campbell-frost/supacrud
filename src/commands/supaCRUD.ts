@@ -5,6 +5,7 @@ import figlet from 'figlet';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
+import { allOps, createOps, deleteOps, readOps, updateOps } from '../utils/crudWrites.js';
 
 export default class SupaCRUD extends Command {
   static override description = 'Welcome to supaCRUD';
@@ -60,14 +61,14 @@ export default class SupaCRUD extends Command {
   private async connectToSupabase(): Promise<void> {
     let config = await this.loadConfig();
     let connectionSuccessful = false;
-  
+
     while (!connectionSuccessful) {
       if (!config) {
         this.log(chalk.yellow('No configuration found. Let\'s set up your Supabase connection.'));
         config = await this.promptForSupabaseCredentials();
         await this.saveConfig(config);
       }
-  
+
       try {
         this.supabase = createClient(config.projectUrl, config.apiKey);
         await this.supabase.from('_test').select('*').limit(1);
@@ -85,44 +86,33 @@ export default class SupaCRUD extends Command {
     }
   }
 
-  private async showTableInfo(tableName: string): Promise<void> {
-    try {
-      const { data, error } = await this.supabase.from(tableName).select('*');
-      if (error) throw error;
-      if (data && data.length > 0) {
-        this.log(chalk.cyan(`Table structure for "${tableName}":`));
-        this.log(chalk.gray(JSON.stringify(data[0], null, 2)));
-      } else {
-        this.log(chalk.yellow(`The "${tableName}" table appears to be empty.`));
-      }
-    } catch (error: any) {
-      this.error(chalk.red(`Error accessing "${tableName}" table: ${error.message}`));
-    }
-  }
-
   private async performCRUDOperation(table: string): Promise<void> {
     const operation = await select({
       message: 'Select a CRUD operation:',
       choices: [
-        { value: 'create', name: 'Create new record' },
-        { value: 'read', name: 'Read records' },
-        { value: 'update', name: 'Update a record' },
-        { value: 'delete', name: 'Delete a record' },
+        { value: 'create', name: 'Generate create record' },
+        { value: 'read', name: 'Generate read record' },
+        { value: 'update', name: 'Generate update record' },
+        { value: 'delete', name: 'Generate delete record' },
+        { value: 'all', name: 'Create all CRUD Ops' }
       ],
     });
 
     switch (operation) {
       case 'create':
-        this.log(chalk.yellow('Create operation not implemented yet.'));
+        await createOps(table);
         break;
       case 'read':
-        await this.showTableInfo(table);
+        await readOps(table);
         break;
       case 'update':
-        this.log(chalk.yellow('Update operation not implemented yet.'));
+        await updateOps(table);
         break;
       case 'delete':
-        this.log(chalk.yellow('Delete operation not implemented yet.'));
+        await deleteOps(table);
+        break;
+      case 'all':
+        await allOps(table);
         break;
     }
   }
