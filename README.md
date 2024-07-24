@@ -30,13 +30,33 @@ supacrud [OPTIONS]
 
 ### Example
 
-Specify a table to work with:
+Run supaCRUD with no options:
 ```bash
 supacrud
+```
+
+Specify a table to generate CRUD ops for:
+```bash
 supacrud --table users
+```
+
+Generate create and read ops for a users table:
+```bash
 supacrud -t users -c -r
+```
+
+Generate update and read ops for a users table:
+```bash
 supacrud -t posts -u -d
+```
+
+Generate all CRUD ops for a comments table:
+```bash
 supacrud -t comments -a
+```
+
+Update your Supabase credentials:
+```bash
 supacrud -s
 ```
 
@@ -46,11 +66,11 @@ If you don't specify any flags, supaCRUD will prompt you to choose an operation 
 
 supaCRUD supports the following operations:
 
-1. **Create**: Add new records to your specified table
-2. **Read**: View existing records and table structure
-3. **Update**: Modify existing records in the table
-4. **Delete**: Remove records from the table
-5. **All**: Add CRUD operations for all of the above
+1. **All**: Add Create, Read, Update, Delete Ops for the specified table
+2. **Create**: Add new records to your specified table
+3. **Read**: View existing records and table structure
+4. **Update**: Modify existing records in the table
+5. **Delete**: Remove records from the table
 
 For each table, supaCRUD generates corresponding .ts files in the `data/<table-name>/` directory containing the CRUD operations for that table.
 
