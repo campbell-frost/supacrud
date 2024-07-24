@@ -93,17 +93,22 @@ export async function deleteOps(tableName: string): Promise<void> {
   try {
     const filePath = await createFileName(tableName, 'delete');
     const content = `
-import { supabase } from '../supabaseClient';
+      import { createClient } from '@/utils/supabase/server';
 
-export async function delete${tableName}(id: string) {
-  const { data, error } = await supabase
-    .from('${tableName}')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-  return data;
-}
+      interface delete${tableName}Props {
+        id: string;
+      }
+
+      export async function delete${tableName}(id: delete${tableName}Props) {
+        const supabase = await createClient();
+
+        const { error } = await supabase.from('${tableName}').delete().eq('id', id);
+        if (error) {
+          throw new Error(\`Error deleting data: \${error.message}\`);
+        }
+
+        return { success: true };
+      }
 `;
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Delete operation file created successfully at ${filePath}`));
