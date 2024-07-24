@@ -20,7 +20,7 @@ export async function createOps(tableName: string): Promise<void> {
   try {
     const filePath = await createFileName(tableName, 'create');
     const content = `
-import { supabase } from '../supabaseClient';
+import { supabase } from '~/';
 
 export async function create${tableName}(data: any) {
   const { data: result, error } = await supabase

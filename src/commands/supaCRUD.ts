@@ -19,12 +19,12 @@ export default class SupaCRUD extends Command {
 
   static override flags = {
     table: Flags.string({ char: 't', description: 'Table name to perform CRUD ops on', required: false }),
-    'set-creds': Flags.boolean({ char: 's', description: 'Update your Supabase credentials', required: false }),
+    all: Flags.boolean({ char: 'a', description: 'Generate all CRUD operations', required: false }),
     create: Flags.boolean({ char: 'c', description: 'Generate create operation', required: false }),
     read: Flags.boolean({ char: 'r', description: 'Generate read operation', required: false }),
-    update: Flags.boolean({ char: 'U', description: 'Generate update operation', required: false }),
+    update: Flags.boolean({ char: 'u', description: 'Generate update operation', required: false }),
     delete: Flags.boolean({ char: 'd', description: 'Generate delete operation', required: false }),
-    all: Flags.boolean({ char: 'a', description: 'Generate all CRUD operations', required: false }),
+    'set-creds': Flags.boolean({ char: 's', description: 'Update your Supabase credentials', required: false }),
   };
 
   private configManager: ConfigManager;
