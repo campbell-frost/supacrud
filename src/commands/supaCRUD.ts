@@ -33,16 +33,15 @@ export default class SupaCRUD extends Command {
       validate: (value) => value.trim() !== '' || 'Table name cannot be empty',
     });
   }
-
   private async selectCrudOperation(): Promise<string> {
     return select({
       message: 'Select a CRUD operation:',
       choices: [
-        { value: 'all', name: 'Create all CRUD Ops' },
-        { value: 'create', name: 'Generate create record' },
-        { value: 'read', name: 'Generate read record' },
-        { value: 'update', name: 'Generate update record' },
-        { value: 'delete', name: 'Generate delete record' },
+        { value: 'all',    name: 'Generate all CRUD operations' },
+        { value: 'create', name: 'Generate create operation' },
+        { value: 'read',   name: 'Generate read operation' },
+        { value: 'update', name: 'Generate update operation' },
+        { value: 'delete', name: 'Generate delete operation' },
       ],
     });
   }
