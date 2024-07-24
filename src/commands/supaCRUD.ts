@@ -14,12 +14,12 @@ export default class SupaCRUD extends Command {
     '<%= config.bin %> <%= command.id %> --table users -c -r',
     '<%= config.bin %> <%= command.id %> -t posts -u -d',
     '<%= config.bin %> <%= command.id %> -t comments -a',
-    '<%= config.bin %> <%= command.id %> -u',
+    '<%= config.bin %> <%= command.id %> -s',
   ];
 
   static override flags = {
     table: Flags.string({ char: 't', description: 'Table name to perform CRUD ops on', required: false }),
-    'update-credentials': Flags.boolean({ char: 'u', description: 'Update your Supabase credentials', required: false }),
+    'set-creds': Flags.boolean({ char: 's', description: 'Update your Supabase credentials', required: false }),
     create: Flags.boolean({ char: 'c', description: 'Generate create operation', required: false }),
     read: Flags.boolean({ char: 'r', description: 'Generate read operation', required: false }),
     update: Flags.boolean({ char: 'U', description: 'Generate update operation', required: false }),
@@ -61,7 +61,7 @@ export default class SupaCRUD extends Command {
     await crudOperation.execute();
   }
 
-  private async updateCredentials(): Promise<void> {
+  private async setCredentials(): Promise<void> {
     const shouldUpdate = await confirm({
       message: 'Are you sure you want to update your Supabase credentials?',
     });
@@ -88,7 +88,7 @@ export default class SupaCRUD extends Command {
  
     try {
       if (flags['update-credentials']) {
-        await this.updateCredentials();
+        await this.setCredentials();
         return;
       }
 

@@ -1,6 +1,6 @@
 # supaCRUD
 
-supaCRUD is an in progress command-line interface tool designed to generate CRUD operations on your Supabase database tables for TypeScript projects.
+supaCRUD is an in progress command-line interface tool designed to generate CRUD (Create, Read, Update, Delete) operations for your Supabase database tables in TypeScript projects.
 
 ## Installation
 
@@ -21,15 +21,26 @@ supacrud [OPTIONS]
 ### Options
 
 - `-t, --table <table-name>`: Specify the table name to perform CRUD operations on.
+- `-a, --all`: Generate all CRUD operations.
+- `-c, --create`: Generate create operation.
+- `-r, --read`: Generate read operation.
+- `-u, --update`: Generate update operation.
+- `-d, --delete`: Generate delete operation.
+- `-s, --set-creds`: Update your Supabase credentials.
 
 ### Example
 
 Specify a table to work with:
 ```bash
+supacrud
 supacrud --table users
+supacrud -t users -c -r
+supacrud -t posts -u -d
+supacrud -t comments -a
+supacrud -s
 ```
 
-This will give you options relating to what you CRUD operations you want to do to this table
+If you don't specify any flags, supaCRUD will prompt you to choose an operation interactively.
 
 ## CRUD Operations
 
@@ -57,7 +68,7 @@ supaCRUD stores its configuration in:
 ~/.config/supaCRUD/config.json
 ```
 
-This file contains your Supabase credentials. Handle it with care and do not share it.
+This file contains your Supabase credentials.
 
 ## License
 
