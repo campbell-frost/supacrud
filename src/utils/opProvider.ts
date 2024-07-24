@@ -39,7 +39,7 @@ class DeleteOperation implements CrudOperation {
   }
 }
 
-export class CrudOperationFactory {
+export class OpProvider {
   static getOperation(operation: string, table: string): CrudOperation {
     switch (operation) {
       case 'all':

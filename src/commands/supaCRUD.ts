@@ -1,21 +1,30 @@
 import { input, password, select, confirm } from '@inquirer/prompts';
-import {  Command, Flags } from '@oclif/core';
-import figlet from 'figlet';
+import { Command, Flags } from '@oclif/core';
 import chalk from 'chalk';
 import { SupabaseConnection } from '../utils/supabaseConnection.js';
 import { ConfigManager } from '../utils/configManager.js';
-import { CrudOperationFactory } from '../utils/operationFactory.js';
+import { OpProvider } from '../utils/opProvider.js';
 
 export default class SupaCRUD extends Command {
   static override description = 'Welcome to supaCRUD';
+
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --table users',
-    '<%= config.bin %> <%= command.id %> --update-credentials',
+    '<%= config.bin %> <%= command.id %> --table users -c -r',
+    '<%= config.bin %> <%= command.id %> -t posts -u -d',
+    '<%= config.bin %> <%= command.id %> -t comments -a',
+    '<%= config.bin %> <%= command.id %> -u',
   ];
+
   static override flags = {
     table: Flags.string({ char: 't', description: 'Table name to perform CRUD ops on', required: false }),
     'update-credentials': Flags.boolean({ char: 'u', description: 'Update your Supabase credentials', required: false }),
+    create: Flags.boolean({ char: 'c', description: 'Generate create operation', required: false }),
+    read: Flags.boolean({ char: 'r', description: 'Generate read operation', required: false }),
+    update: Flags.boolean({ char: 'U', description: 'Generate update operation', required: false }),
+    delete: Flags.boolean({ char: 'd', description: 'Generate delete operation', required: false }),
+    all: Flags.boolean({ char: 'a', description: 'Generate all CRUD operations', required: false }),
   };
 
   private configManager: ConfigManager;
@@ -37,9 +46,9 @@ export default class SupaCRUD extends Command {
     return select({
       message: 'Select a CRUD operation:',
       choices: [
-        { value: 'all',    name: 'Generate all CRUD operations' },
+        { value: 'all', name: 'Generate all CRUD operations' },
         { value: 'create', name: 'Generate create operation' },
-        { value: 'read',   name: 'Generate read operation' },
+        { value: 'read', name: 'Generate read operation' },
         { value: 'update', name: 'Generate update operation' },
         { value: 'delete', name: 'Generate delete operation' },
       ],
@@ -48,7 +57,7 @@ export default class SupaCRUD extends Command {
 
   private async performCRUDOperation(table: string): Promise<void> {
     const operation = await this.selectCrudOperation();
-    const crudOperation = CrudOperationFactory.getOperation(operation, table);
+    const crudOperation = OpProvider.getOperation(operation, table);
     await crudOperation.execute();
   }
 
@@ -75,8 +84,8 @@ export default class SupaCRUD extends Command {
 
   public async run(): Promise<void> {
     const { flags } = await this.parse(SupaCRUD);
-    console.log(chalk.cyan(figlet.textSync('supaCRUD', { horizontalLayout: 'full' })));
-
+    this.log(chalk.yellow('Welcome to supaCRUD!'));
+ 
     try {
       if (flags['update-credentials']) {
         await this.updateCredentials();
@@ -84,10 +93,24 @@ export default class SupaCRUD extends Command {
       }
 
       await this.supabaseConnection.connect();
-
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
-      await this.performCRUDOperation(table);
+
+      const ops: string[] = [];
+      if (flags.all) ops.push('all');
+      if (flags.create) ops.push('create');
+      if (flags.read) ops.push('read');
+      if (flags.update) ops.push('update');
+      if (flags.delete) ops.push('delete');
+
+      if (ops.length === 0) {
+        await this.performCRUDOperation(table);
+      } else {
+        for (const op of ops) {
+          const crudOp = OpProvider.getOperation(op, table);
+          await crudOp.execute();
+        }
+      }
       this.log(chalk.green('\nHappy CRUDing! 🚀'));
     } catch (error: any) {
       this.error(chalk.red(`An error occurred: ${error.message}`));
