@@ -85,14 +85,15 @@ export default class SupaCRUD extends Command {
   public async run(): Promise<void> {
     const { flags } = await this.parse(SupaCRUD);
     this.log(chalk.yellow('Welcome to supaCRUD!'));
- 
+    const schema = await this.supabaseConnection.getTableSchema('trips')
+    console.log(schema);
     try {
       if (flags['update-credentials']) {
         await this.setCredentials();
         return;
       }
 
-      await this.supabaseConnection.connect();
+      await this.supabaseConnection.connect();   
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
 
