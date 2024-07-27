@@ -1,9 +1,19 @@
 import path from 'path';
 import fs from 'fs';
 import chalk from 'chalk';
-import * as ts from "typescript";
+import * as ts from 'typescript';
 
-export default async function getTableSchema(tableName: string) {
+interface TableSchema {
+  Row: Record<string, string | undefined>;
+  Insert: Partial<Record<string, string | undefined>>;
+  Update: Partial<Record<string, string | undefined>>;
+}
+
+interface DatabaseSchema {
+  [tableName: string]: TableSchema;
+}
+
+export default async function getTableSchema<T extends keyof DatabaseSchema>(tableName: T): Promise<DatabaseSchema[T] | null> {
   const currentDir = process.cwd();
   const typesDir = path.join(currentDir, 'types', 'supabase.ts');
   
@@ -44,11 +54,23 @@ export default async function getTableSchema(tableName: string) {
       );
 
       if (rowProperty && ts.isPropertySignature(rowProperty) && rowProperty.type && ts.isTypeLiteralNode(rowProperty.type)) {
-        const rowInterface = rowProperty.type.members
-          .map(member => sourceFile.text.slice(member.pos, member.end))
-          .join('\n');
+        const rowObject: Record<string, string | undefined> = {};
+        
+        rowProperty.type.members.forEach(member => {
+          if (ts.isPropertySignature(member) && ts.isIdentifier(member.name)) {
+            const propertyName = member.name.text;
+            const propertyType = member.type ? member.type.getText(sourceFile) : 'any';
+            rowObject[propertyName] = propertyType;
+          }
+        });
 
-        return rowInterface;
+        const schema: DatabaseSchema[T] = {
+          Row: rowObject,
+          Insert: rowObject,
+          Update: rowObject,
+        };
+
+        return schema;
       }
     }
 

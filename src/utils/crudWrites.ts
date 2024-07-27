@@ -1,8 +1,13 @@
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
+import getTableSchema from './getTableSchema.js';
 
-export async function createFileName(tableName: string, opName: string): Promise<string> {
+interface TableSchema {
+  [key: string]: string | undefined;
+}
+
+export async function createFileName(tableName: string, opName: string): Promise<string> { 
   const currentPath = process.cwd();
   const destinationDir = path.join(currentPath, 'data', tableName);
   const destinationPath = path.join(destinationDir, `${opName}.ts`);
@@ -18,21 +23,35 @@ export async function createFileName(tableName: string, opName: string): Promise
 
 export async function createOps(tableName: string): Promise<void> {
   try {
+    const schema = await getTableSchema(tableName);
+    if (!schema) {
+      throw new Error(`Schema for table '${tableName}' not found.`);
+    }
+    
+    const properties = Object.entries(schema.Row)
+      .map(([key, type]) => `  ${key}: ${type};`)
+      .join('\n');
+
     const filePath = await createFileName(tableName, 'create');
     const content = `
-    import { supabase } from '@/utils/supabase/server';
-    // This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
+import { supabase } from '@/utils/supabase/server';
+// This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
 
-    export async function create${tableName}(data: any) {
-      const { data: result, error } = await supabase
-        .from('${tableName}')
-        .insert(data)
-        .select();
-      
-      if (error) throw error;
-      return result;
-    }
-`;
+interface create${tableName}Props {
+${properties}
+}
+
+export async function create${tableName}(data: create${tableName}Props) {
+  const { data: result, error } = await supabase
+    .from('${tableName}')
+    .insert(data)
+    .select();
+  
+  if (error) throw error;
+  return result;
+}
+`.trim();
+
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Create operation file created successfully at ${filePath}`));
   } catch (error) {
