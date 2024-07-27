@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConfigManager } from './configManager.js';
 
 export class SupabaseConnection {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
 
   constructor(private configManager: ConfigManager) { }
 
@@ -13,24 +13,16 @@ export class SupabaseConnection {
   }
 
   private async testConnection(): Promise<void> {
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized');
+    }
     await this.supabase.from('_test').select('*').limit(1);
   }
 
-  public async getTableSchema(tableName: string) {
-    const { data, error } = await this.supabase
-      .from('information_schema.columns')
-      .select('column_name, data_type, is_nullable, column_default')
-      .eq('table_name', tableName)
-      .eq('table_schema', 'public')
-  
-    if (error) {
-      console.error('Error fetching table schema:', error)
-      return null
-    }
-    return data
-  }
-
   getClient() {
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized. Call connect() first.');
+    }
     return this.supabase;
   }
 }
