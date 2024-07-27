@@ -36,16 +36,17 @@ export async function createOps(tableName: string): Promise<void> {
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
 
+    const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'create');
     const content = `
 import { supabase } from '@/utils/supabase/server';
 // This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
 
-interface create${tableName}Props {
+interface create${formattedTableName}Props {
 ${properties}
 }
 
-export async function create${tableName}(data: create${tableName}Props) {
+export async function create${formattedTableName}(data: create${formattedTableName}Props) {
   const { data: result, error } = await supabase
     .from('${tableName}')
     .insert(data)
@@ -65,24 +66,25 @@ export async function create${tableName}(data: create${tableName}Props) {
 
 export async function readOps(tableName: string): Promise<void> {
   try {
+    const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'read');
     const content = `
-      import { supabase } from '@/utils/supabase/server';
-      // This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
+import { supabase } from '@/utils/supabase/server';
+// This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
 
-      export async function read${tableName}(id?: string) {
-        let query = supabase.from('${tableName}').select('*');
-        
-        if (id) {
-          query = query.eq('id', id);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        return data;
-      }
-      `;
+export async function read${formattedTableName}(id?: string) {
+  let query = supabase.from('${tableName}').select('*');
+  
+  if (id) {
+    query = query.eq('id', id);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) throw error;
+  return data;
+}
+`.trim();
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Read operation file created successfully at ${filePath}`));
   } catch (error) {
@@ -92,22 +94,23 @@ export async function readOps(tableName: string): Promise<void> {
 
 export async function updateOps(tableName: string): Promise<void> {
   try {
+    const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'update');
     const content = `
-    import { supabase } from '@/utils/supabase/server';
-    // This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
+import { supabase } from '@/utils/supabase/server';
+// This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
 
-    export async function update${tableName}(id: string, data: any) {
-      const { data: result, error } = await supabase
-        .from('${tableName}')
-        .update(data)
-        .eq('id', id)
-        .select();
-      
-      if (error) throw error;
-      return result;
-    }
-    `;
+export async function update${formattedTableName}(id: string, data: any) {
+  const { data: result, error } = await supabase
+    .from('${tableName}')
+    .update(data)
+    .eq('id', id)
+    .select();
+  
+  if (error) throw error;
+  return result;
+}
+`.trim();
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Update operation file created successfully at ${filePath}`));
   } catch (error) {
@@ -117,26 +120,27 @@ export async function updateOps(tableName: string): Promise<void> {
 
 export async function deleteOps(tableName: string): Promise<void> {
   try {
+    const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'delete');
     const content = `
-      import { createClient } from '@/utils/supabase/server';
-      // This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
+import { createClient } from '@/utils/supabase/server';
+// This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
 
-      interface delete${tableName}Props {
-        id: string;
-      }
+interface delete${tableName}Props {
+  id: string;
+}
 
-      export async function delete${tableName}(id: delete${tableName}Props) {
-        const supabase = await createClient();
+export async function delete${tableName}(id: delete${tableName}Props) {
+  const supabase = await createClient();
 
-        const { error } = await supabase.from('${tableName}').delete().eq('id', id);
-        if (error) {
-          throw new Error(\`Error deleting data: \${error.message}\`);
-        }
+  const { error } = await supabase.from('${tableName}').delete().eq('id', id);
+  if (error) {
+    throw new Error(\`Error deleting data: \${error.message}\`);
+  }
 
-        return { success: true };
-      }
-`;
+  return { success: true };
+}
+`.trim();
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Delete operation file created successfully at ${filePath}`));
   } catch (error) {
@@ -164,7 +168,7 @@ export default async function get${formattedTableName}(){
     }
     return ${tableName};
 }
-    `.trim();
+`.trim();
 
     await fs.promises.writeFile(filePath, content);
   } catch (error) {
