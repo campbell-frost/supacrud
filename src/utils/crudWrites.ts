@@ -181,6 +181,7 @@ export default async function get${formattedTableName}(){
 `.trim();
 
     await fs.promises.writeFile(filePath, content);
+    console.log(chalk.green(`List operation file created successfully at ${filePath}`));
   } catch (error) {
     console.error(chalk.red(`Error creating list operation file: ${error.message}`));
   }
