@@ -36,24 +36,34 @@ export async function createOps(tableName: string): Promise<void> {
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
 
+    const data = Object.entries(schema.Row)
+      .filter(([key]) => key !== 'id')
+      .map(([key]) => `    ${key}: formData.${key},`)
+      .join('\n');
+
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'create');
     const content = `
-import { supabase } from '@/utils/supabase/server';
-// This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
+import { createClient } from '@/utils/supabase/server';
 
 interface create${formattedTableName}Props {
 ${properties}
 }
 
-export async function create${formattedTableName}(data: create${formattedTableName}Props) {
-  const { data: result, error } = await supabase
-    .from('${tableName}')
-    .insert(data)
-    .select();
+export async function create${formattedTableName}(formData: create${formattedTableName}Props) {
+  const supabase = await createClient();
   
-  if (error) throw error;
-  return result;
+  const data = {
+${data}
+  }
+
+  const { error } = await supabase.from('${tableName}').insert(data);
+
+  if (error) {
+    throw new Error(\`Error adding data: \${error.message}\`);
+  }
+
+  return { success: true };
 }
 `.trim();
 
@@ -69,7 +79,7 @@ export async function readOps(tableName: string): Promise<void> {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'read');
     const content = `
-import { supabase } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/server';
 // This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
 
 export async function read${formattedTableName}(id?: string) {
