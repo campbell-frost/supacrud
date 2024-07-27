@@ -60,12 +60,16 @@ export default class Supacrud extends Command {
     await crudOperation.execute();
   }
 
-  private async setCredentials(): Promise<void> {
-    const shouldUpdate = await confirm({
-      message: 'Are you sure you want to update your Supabase credentials?',
-    });
+  private async setCredentials(firstTime: boolean): Promise<void> {
+    let shouldUpdate = false;
+    if (!firstTime) {
+      await confirm({
+        message: 'Are you sure you want to update your Supabase credentials?',
+      });
+      shouldUpdate = true;
+    }
 
-    if (shouldUpdate) {
+    if (shouldUpdate || firstTime) {
       const projectUrl = await input({
         message: 'Enter your Supabase project URL:',
         validate: (value) => value.trim() !== '' || 'Project URL cannot be empty',
@@ -81,14 +85,24 @@ export default class Supacrud extends Command {
     }
   }
 
+  private async areCredentialsSet(): Promise<boolean> {
+    const config = await this.configManager.getConfig();
+    return !!(config.projectUrl && config.apiKey);
+  }
+
   public async run(): Promise<void> {
     const { flags } = await this.parse(Supacrud);
     try {
-      if (flags['update-credentials']) {
-        await this.setCredentials();
+      if (flags['set-creds']) {
+        await this.setCredentials(false);
         return;
       }
-      
+
+      if (!(await this.areCredentialsSet())) {
+        this.log(chalk.yellow('Supabase credentials are not set. Let\'s set them up.  \nYour credentials can be found in your supabase project dashboard under Project Settings -> API'));
+        await this.setCredentials(true);
+      }
+
       await this.supabaseConnection.connect();
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
