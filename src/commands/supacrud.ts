@@ -14,6 +14,8 @@ export default class Supacrud extends Command {
     '<%= config.bin %> <%= command.id %> -t posts -u -d',
     '<%= config.bin %> <%= command.id %> -t comments -a',
     '<%= config.bin %> <%= command.id %> -s',
+    '<%= config.bin %> <%= command.id %> -t users -l',
+
   ];
 
   static override flags = {
@@ -23,6 +25,7 @@ export default class Supacrud extends Command {
     read: Flags.boolean({ char: 'r', description: 'Generate read operation', required: false }),
     update: Flags.boolean({ char: 'u', description: 'Generate update operation', required: false }),
     delete: Flags.boolean({ char: 'd', description: 'Generate delete operation', required: false }),
+    list: Flags.boolean({ char: 'l', description: 'Generate list operation', required: false }),
     'set-creds': Flags.boolean({ char: 's', description: 'Update your Supabase credentials', required: false }),
   };
 
@@ -50,6 +53,7 @@ export default class Supacrud extends Command {
         { value: 'create', name: 'Generate create operation' },
         { value: 'read', name: 'Generate read operation' },
         { value: 'update', name: 'Generate update operation' },
+        { value: 'list', name: 'Generate list operation' },
         { value: 'delete', name: 'Generate delete operation' },
       ],
     });
@@ -85,6 +89,7 @@ export default class Supacrud extends Command {
       if (flags.read) ops.push('read');
       if (flags.update) ops.push('update');
       if (flags.delete) ops.push('delete');
+      if(flags.list) ops.push('list');
 
       if (ops.length === 0) {
         await this.performCRUDOperation(table);

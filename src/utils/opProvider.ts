@@ -1,4 +1,4 @@
-import { createOps, readOps, updateOps, deleteOps, allOps } from './crudWrites.js';
+import { createOps, readOps, updateOps, deleteOps, allOps, listOps } from './crudWrites.js';
 
 interface CrudOperation {
   execute(): Promise<void>;
@@ -39,19 +39,27 @@ class DeleteOperation implements CrudOperation {
   }
 }
 
+class ListOperation implements CrudOperation {
+  constructor(private table: string) { }
+  async execute() {
+    await listOps(this.table);
+  }
+}
 export class OpProvider {
   static getOperation(operation: string, table: string): CrudOperation {
     switch (operation) {
       case 'all':
-        return new AllOperation(table)
+        return new AllOperation(table);
       case 'create':
         return new CreateOperation(table);
       case 'read':
-        return new ReadOperation(table)
+        return new ReadOperation(table);
       case 'update':
         return new UpdateOperation(table);
       case 'delete':
-        return new DeleteOperation(table)
+        return new DeleteOperation(table);
+      case 'list':
+        return new ListOperation(table);
       default:
         throw new Error(`Unknown operation: ${operation}`);
     }

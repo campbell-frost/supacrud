@@ -7,7 +7,11 @@ interface TableSchema {
   [key: string]: string | undefined;
 }
 
-export async function createFileName(tableName: string, opName: string): Promise<string> { 
+function capitalizeFirstLetter(string: string): string {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+export async function createFileName(tableName: string, opName: string): Promise<string> {
   const currentPath = process.cwd();
   const destinationDir = path.join(currentPath, 'data', tableName);
   const destinationPath = path.join(destinationDir, `${opName}.ts`);
@@ -27,7 +31,7 @@ export async function createOps(tableName: string): Promise<void> {
     if (!schema) {
       throw new Error(`Schema for table '${tableName}' not found.`);
     }
-    
+
     const properties = Object.entries(schema.Row)
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
@@ -140,10 +144,40 @@ export async function deleteOps(tableName: string): Promise<void> {
   }
 }
 
+export async function listOps(tableName: string): Promise<void> {
+  try {
+    const formattedTableName = capitalizeFirstLetter(tableName);
+    const filePath = await createFileName(tableName, 'list');
+    const content =
+      `
+import { createClient } from "@/utils/supabase/server";
+
+export default async function get${formattedTableName}(){
+    const supabase = await createClient();
+    const { data: ${tableName}, error } = await supabase
+    .from('${tableName}')
+    .select('*')
+    .order('date', { ascending: true });
+    
+    if (error) {
+        throw new Error(\`An error occured retreiving data \${error.message}\`)
+    }
+    return ${tableName};
+}
+    `.trim();
+
+    await fs.promises.writeFile(filePath, content);
+  } catch (error) {
+    console.error(chalk.red(`Error creating list operation file: ${error.message}`));
+  }
+}
+
+
 export async function allOps(tableName: string): Promise<void> {
   await createOps(tableName);
   await readOps(tableName);
   await updateOps(tableName);
   await deleteOps(tableName);
+  await listOps(tableName);
   console.log(chalk.green(`All CRUD operation files generated for table: ${tableName}`));
 }
