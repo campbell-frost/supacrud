@@ -1,4 +1,4 @@
-import { input, password, select, confirm } from '@inquirer/prompts';
+import { input, select } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import chalk from 'chalk';
 import { SupabaseConnection } from '../utils/supabaseConnection.js';
@@ -41,6 +41,7 @@ export default class Supacrud extends Command {
       validate: (value) => value.trim() !== '' || 'Table name cannot be empty',
     });
   }
+
   private async selectCrudOperation(): Promise<string> {
     return select({
       message: 'Select a CRUD operation:',
@@ -60,47 +61,18 @@ export default class Supacrud extends Command {
     await crudOperation.execute();
   }
 
-  private async setCredentials(firstTime: boolean): Promise<void> {
-    let shouldUpdate = false;
-    if (!firstTime) {
-      await confirm({
-        message: 'Are you sure you want to update your Supabase credentials?',
-      });
-      shouldUpdate = true;
-    }
-
-    if (shouldUpdate || firstTime) {
-      const projectUrl = await input({
-        message: 'Enter your Supabase project URL:',
-        validate: (value) => value.trim() !== '' || 'Project URL cannot be empty',
-      });
-
-      const apiKey = await password({
-        message: 'Enter your Supabase API key:',
-        validate: (value) => value.trim() !== '' || 'API key cannot be empty',
-      });
-
-      await this.configManager.saveConfig({ projectUrl, apiKey });
-      this.log(chalk.green('Credentials updated successfully!'));
-    }
-  }
-
-  private async areCredentialsSet(): Promise<boolean> {
-    const config = await this.configManager.getConfig();
-    return !!(config.projectUrl && config.apiKey);
-  }
-
   public async run(): Promise<void> {
-    const { flags } = await this.parse(Supacrud);
     try {
+      const { flags } = await this.parse(Supacrud);
+
       if (flags['set-creds']) {
-        await this.setCredentials(false);
+        await this.configManager.setCredentials(false);
         return;
       }
 
-      if (!(await this.areCredentialsSet())) {
+      if (!(await this.configManager.areCredentialsSet())) {
         this.log(chalk.yellow('Supabase credentials are not set. Let\'s set them up.  \nYour credentials can be found in your supabase project dashboard under Project Settings -> API'));
-        await this.setCredentials(true);
+        await this.configManager.setCredentials(true);
       }
 
       await this.supabaseConnection.connect();
@@ -123,8 +95,8 @@ export default class Supacrud extends Command {
         }
       }
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
-    } catch (error: any) {
-      this.error(chalk.red(`An error occurred: ${error.message}`));
+    } catch (error) {
+      this.log(chalk.red('An error occured', error.message));
     }
   }
 }
