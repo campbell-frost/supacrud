@@ -4,10 +4,8 @@ import chalk from 'chalk';
 import { SupabaseConnection } from '../utils/supabaseConnection.js';
 import { ConfigManager } from '../utils/configManager.js';
 import { OpProvider } from '../utils/opProvider.js';
-import getTableSchema from '../utils/getTableSchema.js';
 
-export default class SupaCRUD extends Command {
-  static override description = 'Welcome to supaCRUD';
+export default class Supacrud extends Command {
 
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -84,8 +82,7 @@ export default class SupaCRUD extends Command {
   }
 
   public async run(): Promise<void> {
-    const { flags } = await this.parse(SupaCRUD);
-    this.log(chalk.yellow('Welcome to supaCRUD!'));
+    const { flags } = await this.parse(Supacrud);
     try {
       if (flags['update-credentials']) {
         await this.setCredentials();
@@ -95,7 +92,7 @@ export default class SupaCRUD extends Command {
       await this.supabaseConnection.connect();
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
-      
+
       const ops: string[] = [];
       if (flags.all) ops.push('all');
       if (flags.create) ops.push('create');
@@ -111,7 +108,7 @@ export default class SupaCRUD extends Command {
           await crudOp.execute();
         }
       }
-      this.log(chalk.green('\nHappy CRUDing! 🚀'));
+      this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error: any) {
       this.error(chalk.red(`An error occurred: ${error.message}`));
     }

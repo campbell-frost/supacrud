@@ -18,12 +18,12 @@
     "typescript": "^5.5.3"
   },
   "bin": {
-    "supaCRUD": "./bin/run.js"
+    "supacrud": "./bin/run.js"
   },
   "oclif": {
-    "bin": "supaCRUD",
+    "bin": "supacrud",
     "commands": "./dist/commands",
-    "dirname": "supaCRUD",
+    "dirname": "supacrud",
     "topicSeparator": " "
   },
   "devDependencies": {

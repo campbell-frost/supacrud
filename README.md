@@ -1,10 +1,10 @@
-# supaCRUD
+# supacrud
 
-supaCRUD is an in progress command-line interface tool designed to generate CRUD (Create, Read, Update, Delete) operations for your Supabase database tables in TypeScript projects.
+supacrud is an in progress command-line interface tool designed to generate CRUD (Create, Read, Update, Delete) operations for your Supabase database tables in TypeScript projects.
 
 ## Installation
 
-To install supaCRUD, make sure you have Node.js and npm installed, then run:
+To install supacrud, make sure you have Node.js and npm installed, then run:
 
 ```bash
 npm install -g supacrud
@@ -12,7 +12,7 @@ npm install -g supacrud
 
 ## Usage
 
-After installation, you can use supaCRUD by running the `supacrud` command in your terminal:
+After installation, you can use supacrud by running the `supacrud` command in your terminal:
 
 ```bash
 supacrud [OPTIONS]
@@ -30,7 +30,7 @@ supacrud [OPTIONS]
 
 ### Example
 
-Run supaCRUD with no options:
+Run supacrud with no options:
 ```bash
 supacrud
 ```
@@ -60,11 +60,11 @@ Update your Supabase credentials:
 supacrud -s
 ```
 
-If you don't specify any flags, supaCRUD will prompt you to choose an operation interactively.
+If you don't specify any flags, supacrud will prompt you to choose an operation interactively.
 
 ## CRUD Operations
 
-supaCRUD supports the following operations:
+supacrud supports the following operations:
 
 1. **All**: Add Create, Read, Update, Delete Ops for the specified table
 2. **Create**: Add new records to your specified table
@@ -72,20 +72,20 @@ supaCRUD supports the following operations:
 4. **Update**: Modify existing records in the table
 5. **Delete**: Remove records from the table
 
-For each table, supaCRUD generates corresponding .ts files in the `data/<table-name>/` directory containing the CRUD operations for that table.
+For each table, supacrud generates corresponding .ts files in the `data/<table-name>/` directory containing the CRUD operations for that table.
 
 ## First-Time Setup (current implementation)
 
-When you run supaCRUD for the first time, it will prompt you to enter your Supabase project URL and API key. These credentials will be stored locally for future use.
+When you run supacrud for the first time, it will prompt you to enter your Supabase project URL and API key. These credentials will be stored locally for future use.
 
-In the future, supaCRUD will infer the Supabase project URL and API key from local storage if `supabase login` has been run.
+In the future, supacrud will infer the Supabase project URL and API key from local storage if `supabase login` has been run.
 
 ## Configuration
 
-supaCRUD stores its configuration in:
+supacrud stores its configuration in:
 
 ```
-~/.config/supaCRUD/config.json
+~/.config/supacrud/config.json
 ```
 
 This file contains your Supabase credentials.

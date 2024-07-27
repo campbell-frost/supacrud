@@ -72,7 +72,7 @@ export async function updateOps(tableName: string): Promise<void> {
     const filePath = await createFileName(tableName, 'update');
     const content = `
     import { supabase } from '@/utils/supabase/server';
-    // This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
+    // This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
 
     export async function update${tableName}(id: string, data: any) {
       const { data: result, error } = await supabase
@@ -97,6 +97,7 @@ export async function deleteOps(tableName: string): Promise<void> {
     const filePath = await createFileName(tableName, 'delete');
     const content = `
       import { createClient } from '@/utils/supabase/server';
+      // This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
 
       interface delete${tableName}Props {
         id: string;
