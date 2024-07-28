@@ -57,7 +57,9 @@ export async function create${formattedTableName}(formData: create${formattedTab
 ${data}
   }
 
-  const { error } = await supabase.from('${tableName}').insert(data);
+  const { error } = await supabase
+  .from('${tableName}')
+  .insert(data);
 
   if (error) {
     throw new Error(\`Error adding data: \${error.message}\`);
@@ -80,18 +82,18 @@ export async function readOps(tableName: string): Promise<void> {
     const filePath = await createFileName(tableName, 'read');
     const content = `
 import { createClient } from '@/utils/supabase/server';
-// This is the default location for your SupaBase config in Nextjs projects.  you might have to edit this if you are using a different framework.
 
-export async function read${formattedTableName}(id?: string) {
-  let query = supabase.from('${tableName}').select('*');
-  
-  if (id) {
-    query = query.eq('id', id);
+export async function read${formattedTableName}() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+  .from('${tableName}')
+  .select('*');
+
+  if(error){
+    throw new Error(\`Error reading data: \${error.message}\`);
   }
   
-  const { data, error } = await query;
-  
-  if (error) throw error;
   return data;
 }
 `.trim();
@@ -104,13 +106,31 @@ export async function read${formattedTableName}(id?: string) {
 
 export async function updateOps(tableName: string): Promise<void> {
   try {
+    
+    const schema = await getTableSchema(tableName);
+    if (!schema) {
+      throw new Error(`Schema for table '${tableName}' not found.`);
+    }
+
+    const properties = Object.entries(schema.Row)
+      .map(([key, type]) => `  ${key}: ${type};`)
+      .join('\n');
+
+    const data = Object.entries(schema.Row)
+      .filter(([key]) => key !== 'id')
+      .map(([key]) => `    ${key}: formData.${key},`)
+      .join('\n');
+
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'update');
     const content = `
-import { supabase } from '@/utils/supabase/server';
-// This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
+import { createClient } from '@/utils/supabase/server';
 
-export async function update${formattedTableName}(id: string, data: any) {
+interface update${formattedTableName}Props {
+${properties}
+}
+
+export async function update${formattedTableName}(formData: update${formattedTableName}Props) {
   const { data: result, error } = await supabase
     .from('${tableName}')
     .update(data)
@@ -136,11 +156,11 @@ export async function deleteOps(tableName: string): Promise<void> {
 import { createClient } from '@/utils/supabase/server';
 // This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
 
-interface delete${tableName}Props {
+interface delete${formattedTableName}Props {
   id: string;
 }
 
-export async function delete${tableName}(id: delete${tableName}Props) {
+export async function delete${formattedTableName}(id: delete${tableName}Props) {
   const supabase = await createClient();
 
   const { error } = await supabase.from('${tableName}').delete().eq('id', id);
