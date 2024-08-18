@@ -89,7 +89,7 @@ export default class Supacrud extends Command {
       if (flags.read) ops.push('read');
       if (flags.update) ops.push('update');
       if (flags.delete) ops.push('delete');
-      if(flags.list) ops.push('list');
+      if (flags.list) ops.push('list');
 
       if (ops.length === 0) {
         await this.performCRUDOperation(table);

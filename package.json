@@ -1,13 +1,14 @@
 {
   "name": "supacrud",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1", 
+    "prepublishOnly": "npm run build"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "author": "Campbell Frost",
+  "license": "MIT",
+  "description": "Generate CRUD ops for typescript supabase projects",
   "type": "module",
   "dependencies": {
     "@oclif/core": "^4.0.12",
@@ -18,13 +19,18 @@
     "typescript": "^5.5.3"
   },
   "bin": {
-    "supacrud": "./bin/run.js"
+    "supacrud": "bin/run.js"
   },
   "oclif": {
     "bin": "supacrud",
-    "commands": "./dist/commands",
+    "commands": "/lib/commands",
     "dirname": "supacrud",
-    "topicSeparator": " "
+    "topicSeparator": " ", 
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-warn-if-update-available",
+      "@oclif/plugin-not-found"
+    ]
   },
   "devDependencies": {
     "@types/figlet": "^1.5.8",
