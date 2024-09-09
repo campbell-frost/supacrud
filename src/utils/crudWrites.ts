@@ -2,7 +2,6 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 import getTableSchema from './getTableSchema.js';
-import { SupabaseClient } from '@supabase/supabase-js';
 
 function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
@@ -27,13 +26,14 @@ export const createFileName = async (tableName: string, opName: string): Promise
   }
 }
 
-export const createOps = async (tableName: string): Promise<void> => {  try {
+export const createOps = async (tableName: string): Promise<void> => {
+  try {
     const schema = await getTableSchema(tableName);
     if (!schema) {
       throw new Error(`Schema for table '${tableName}' not found.`);
     }
 
-    const properties = Object.entries(schema.Row)
+    const createInterface = Object.entries(schema.Row)
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
 
@@ -48,7 +48,7 @@ export const createOps = async (tableName: string): Promise<void> => {  try {
 import { createClient } from '@/utils/supabase/server';
 
 interface create${formattedTableName}Props {
-${properties}
+${createInterface}
 }
 
 export async function create${formattedTableName}(formData: create${formattedTableName}Props) {
@@ -69,7 +69,6 @@ ${data}
   return { success: true };
 }
 `.trim();
-
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Create operation file created successfully at ${filePath}`));
   } catch (error) {
@@ -79,7 +78,8 @@ ${data}
   }
 }
 
-export const readOps = async (tableName: string): Promise<void> => {  try {
+export const readOps = async (tableName: string): Promise<void> => {
+  try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'read');
     const content = `
@@ -109,20 +109,16 @@ export async function read${formattedTableName}() {
   }
 }
 
-export const updateOps = async (tableName: string): Promise<void> => {  try {
+export const updateOps = async (tableName: string): Promise<void> => {
+  try {
 
     const schema = await getTableSchema(tableName);
     if (!schema) {
       throw new Error(`Schema for table '${tableName}' not found.`);
     }
 
-    const properties = Object.entries(schema.Row)
+    const updateInterface = Object.entries(schema.Row)
       .map(([key, type]) => `  ${key}: ${type};`)
-      .join('\n');
-
-    const data = Object.entries(schema.Row)
-      .filter(([key]) => key !== 'id')
-      .map(([key]) => `    ${key}: formData.${key},`)
       .join('\n');
 
     const formattedTableName = capitalizeFirstLetter(tableName);
@@ -131,17 +127,20 @@ export const updateOps = async (tableName: string): Promise<void> => {  try {
 import { createClient } from '@/utils/supabase/server';
 
 interface update${formattedTableName}Props {
-${properties}
+${updateInterface}
 }
 
 export async function update${formattedTableName}(formData: update${formattedTableName}Props) {
+  const supabase = await createClient();
   const { data: result, error } = await supabase
     .from('${tableName}')
-    .update(data)
-    .eq('id', id)
+    .update(formData)
+    .eq('id', formData.id)
     .select();
   
-  if (error) throw error;
+  if (error){
+      throw new Error(\`Error uploading data: \${error.message}\`);
+  }
   return result;
 }
 `.trim();
@@ -154,18 +153,18 @@ export async function update${formattedTableName}(formData: update${formattedTab
   }
 }
 
-export const deleteOps = async (tableName: string): Promise<void> => {  try {
+export const deleteOps = async (tableName: string): Promise<void> => {
+  try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'delete');
     const content = `
 import { createClient } from '@/utils/supabase/server';
-// This is the default location for your SupaBase config in Nextjs projects.  You might have to edit this if you are using a different framework.
 
 interface delete${formattedTableName}Props {
   id: string;
 }
 
-export async function delete${formattedTableName}(id: delete${tableName}Props) {
+export async function delete${formattedTableName}(id: delete${formattedTableName}Props) {
   const supabase = await createClient();
 
   const { error } = await supabase.from('${tableName}').delete().eq('id', id);
@@ -185,7 +184,8 @@ export async function delete${formattedTableName}(id: delete${tableName}Props) {
   }
 }
 
-export const listOps = async (tableName: string): Promise<void> => {  try {
+export const listOps = async (tableName: string): Promise<void> => {
+  try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'list');
     const content =

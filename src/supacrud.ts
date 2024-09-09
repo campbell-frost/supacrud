@@ -30,7 +30,7 @@ export default class Supacrud extends Command {
   async promptForTable(): Promise<string> {
     return input({
       message: 'Enter the name of the table you want to work with:',
-      validate: (value) => value.trim() !== '' || 'Table name cannot be empty',
+      validate: (value: string) => value.trim() !== '' || 'Table name cannot be empty',
     });
   }
 
@@ -56,9 +56,9 @@ export default class Supacrud extends Command {
 
   async run(): Promise<void> {
     try {
-      const { flags } = await this.parse(Supacrud);
       const configDir = this.config.configDir;
-
+      await supabaseConnection.connect(this.config.configDir);
+      const { flags } = await this.parse(Supacrud);
       if (flags['set-creds']) {
         await configManager.updateCredentials(configDir);
         return;
