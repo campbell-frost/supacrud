@@ -2,12 +2,13 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 import getTableSchema from './getTableSchema.js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-export async function createFileName(tableName: string, opName: string): Promise<string> {
+export const createFileName = async (tableName: string, opName: string): Promise<string> => {
   const currentPath = process.cwd();
   const destinationDir = path.join(currentPath, 'data', tableName);
   const destinationPath = path.join(destinationDir, `${opName}.ts`);
@@ -26,8 +27,7 @@ export async function createFileName(tableName: string, opName: string): Promise
   }
 }
 
-export async function createOps(tableName: string): Promise<void> {
-  try {
+export const createOps = async (tableName: string): Promise<void> => {  try {
     const schema = await getTableSchema(tableName);
     if (!schema) {
       throw new Error(`Schema for table '${tableName}' not found.`);
@@ -79,8 +79,7 @@ ${data}
   }
 }
 
-export async function readOps(tableName: string): Promise<void> {
-  try {
+export const readOps = async (tableName: string): Promise<void> => {  try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'read');
     const content = `
@@ -110,8 +109,7 @@ export async function read${formattedTableName}() {
   }
 }
 
-export async function updateOps(tableName: string): Promise<void> {
-  try {
+export const updateOps = async (tableName: string): Promise<void> => {  try {
 
     const schema = await getTableSchema(tableName);
     if (!schema) {
@@ -156,8 +154,7 @@ export async function update${formattedTableName}(formData: update${formattedTab
   }
 }
 
-export async function deleteOps(tableName: string): Promise<void> {
-  try {
+export const deleteOps = async (tableName: string): Promise<void> => {  try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'delete');
     const content = `
@@ -188,8 +185,7 @@ export async function delete${formattedTableName}(id: delete${tableName}Props) {
   }
 }
 
-export async function listOps(tableName: string): Promise<void> {
-  try {
+export const listOps = async (tableName: string): Promise<void> => {  try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'list');
     const content =
@@ -220,7 +216,7 @@ export default async function get${formattedTableName}(){
 }
 
 
-export async function allOps(tableName: string): Promise<void> {
+export const allOps = async (tableName: string): Promise<void> => {
   await createOps(tableName);
   await readOps(tableName);
   await updateOps(tableName);

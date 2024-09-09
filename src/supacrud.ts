@@ -1,13 +1,12 @@
 import { input, select } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import chalk from 'chalk';
-import { SupabaseConnection } from './utils/supabaseConnection.js';
-import { ConfigManager } from './utils/configManager.js';
-import { OpProvider } from './utils/opProvider.js';
+import * as configManager from './utils/configManager.js';
+import * as supabaseConnection from './utils/supabaseConnection.js';
+import * as opProvider from './utils/opProvider.js';
 
 export default class Supacrud extends Command {
-
-  static override examples = [
+  static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --table users',
     '<%= config.bin %> <%= command.id %> --table users -c -r',
@@ -15,10 +14,9 @@ export default class Supacrud extends Command {
     '<%= config.bin %> <%= command.id %> -t comments -a',
     '<%= config.bin %> <%= command.id %> -s',
     '<%= config.bin %> <%= command.id %> -t users -l',
-
   ];
 
-  static override flags = {
+  static flags = {
     table: Flags.string({ char: 't', description: 'Table name to perform CRUD ops on', required: false }),
     all: Flags.boolean({ char: 'a', description: 'Generate all CRUD operations', required: false }),
     create: Flags.boolean({ char: 'c', description: 'Generate create operation', required: false }),
@@ -29,23 +27,14 @@ export default class Supacrud extends Command {
     'set-creds': Flags.boolean({ char: 's', description: 'Update your Supabase credentials', required: false }),
   };
 
-  private configManager: ConfigManager;
-  private supabaseConnection: SupabaseConnection;
-
-  constructor(argv: string[], config: any) {
-    super(argv, config);
-    this.configManager = new ConfigManager(this.config.configDir);
-    this.supabaseConnection = new SupabaseConnection(this.configManager);
-  }
-
-  private async promptForTable(): Promise<string> {
+  async promptForTable(): Promise<string> {
     return input({
       message: 'Enter the name of the table you want to work with:',
       validate: (value) => value.trim() !== '' || 'Table name cannot be empty',
     });
   }
 
-  private async selectCrudOperation(): Promise<string> {
+  async selectCrudOperation(): Promise<string> {
     return select({
       message: 'Select a CRUD operation:',
       choices: [
@@ -59,27 +48,28 @@ export default class Supacrud extends Command {
     });
   }
 
-  private async performCRUDOperation(table: string): Promise<void> {
+  async performCRUDOperation(table: string): Promise<void> {
     const operation = await this.selectCrudOperation();
-    const crudOperation = OpProvider.getOperation(operation, table);
+    const crudOperation = opProvider.getOperation(operation, table);
     await crudOperation.execute();
   }
 
-  public async run(): Promise<void> {
+  async run(): Promise<void> {
     try {
       const { flags } = await this.parse(Supacrud);
+      const configDir = this.config.configDir;
 
       if (flags['set-creds']) {
-        await this.configManager.setCredentials(false);
+        await configManager.updateCredentials(configDir);
         return;
       }
 
-      if (!(await this.configManager.areCredentialsSet())) {
+      if (!(await configManager.areCredentialsSet(configDir))) {
         this.log(chalk.yellow('Supabase credentials are not set. Let\'s set them up.  \nYour credentials can be found in your supabase project dashboard under Project Settings -> API'));
-        await this.configManager.setCredentials(true);
+        await configManager.setCredentials(configDir, true);
       }
 
-      await this.supabaseConnection.connect();
+      const supabase = await supabaseConnection.connect(configDir);
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
 
@@ -95,14 +85,15 @@ export default class Supacrud extends Command {
         await this.performCRUDOperation(table);
       } else {
         for (const op of ops) {
-          const crudOp = OpProvider.getOperation(op, table);
+          const crudOp = opProvider.getOperation(op, table);
           await crudOp.execute();
         }
       }
+
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error) {
       if (error instanceof Error) {
-        this.log(chalk.red('An error occured', error.message));
+        this.log(chalk.red('An error occurred', error.message));
       }
     }
   }

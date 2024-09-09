@@ -1,67 +1,27 @@
 import { createOps, readOps, updateOps, deleteOps, allOps, listOps } from './crudWrites.js';
 
-interface CrudOperation {
+export interface CrudOperation {
   execute(): Promise<void>;
 }
 
-class AllOperation implements CrudOperation {
-  constructor(private table: string) { }
-  async execute() {
-    await allOps(this.table);
+export const getOperation = (
+  operation: string,
+  table: string,
+): CrudOperation => {
+  switch (operation) {
+    case 'all':
+      return { execute: async () => await allOps(table) };
+    case 'create':
+      return { execute: async () => await createOps(table) };
+    case 'read':
+      return { execute: async () => await readOps(table) };
+    case 'update':
+      return { execute: async () => await updateOps(table) };
+    case 'delete':
+      return { execute: async () => await deleteOps(table) };
+    case 'list':
+      return { execute: async () => await listOps(table) };
+    default:
+      throw new Error(`Unknown operation: ${operation}`);
   }
-}
-
-class CreateOperation implements CrudOperation {
-  constructor(private table: string) { }
-  async execute() {
-    await createOps(this.table);
-  }
-}
-
-class ReadOperation implements CrudOperation {
-  constructor(private table: string) { }
-  async execute() {
-    await readOps(this.table);
-  }
-}
-
-class UpdateOperation implements CrudOperation {
-  constructor(private table: string) { }
-  async execute() {
-    await updateOps(this.table);
-  }
-}
-
-class DeleteOperation implements CrudOperation {
-  constructor(private table: string) { }
-  async execute() {
-    await deleteOps(this.table);
-  }
-}
-
-class ListOperation implements CrudOperation {
-  constructor(private table: string) { }
-  async execute() {
-    await listOps(this.table);
-  }
-}
-export class OpProvider {
-  static getOperation(operation: string, table: string): CrudOperation {
-    switch (operation) {
-      case 'all':
-        return new AllOperation(table);
-      case 'create':
-        return new CreateOperation(table);
-      case 'read':
-        return new ReadOperation(table);
-      case 'update':
-        return new UpdateOperation(table);
-      case 'delete':
-        return new DeleteOperation(table);
-      case 'list':
-        return new ListOperation(table);
-      default:
-        throw new Error(`Unknown operation: ${operation}`);
-    }
-  }
-}
+};
