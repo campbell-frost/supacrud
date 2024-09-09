@@ -69,7 +69,6 @@ export default class Supacrud extends Command {
         await configManager.setCredentials(configDir, true);
       }
 
-      const supabase = await supabaseConnection.connect(configDir);
       const table = flags.table || await this.promptForTable();
       this.log(chalk.blue(`You've selected the "${table}" table.`));
 

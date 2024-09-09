@@ -47,10 +47,3 @@ const testConnection = async (supabase: SupabaseClient): Promise<void> => {
     }
   }
 }
-
-const getClient = async (supabase: SupabaseClient) => {
-  if (supabase) {
-    throw new Error('Supabase client not initialized. Call connect() first.');
-  }
-  return supabase;
-}
