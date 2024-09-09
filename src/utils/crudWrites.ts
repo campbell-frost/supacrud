@@ -3,10 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import getTableSchema from './getTableSchema.js';
 
-interface TableSchema {
-  [key: string]: string | undefined;
-}
-
 function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }

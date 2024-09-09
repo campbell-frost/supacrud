@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1", 
+    "build": "tsc",
     "prepublishOnly": "npm run build"
   },
   "author": "Campbell Frost",
@@ -23,7 +24,7 @@
   },
   "oclif": {
     "bin": "supacrud",
-    "commands": "/lib/commands",
+    "commands": "/dist/commands",
     "dirname": "supacrud",
     "topicSeparator": " ", 
     "plugins": [

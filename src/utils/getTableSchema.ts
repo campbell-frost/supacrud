@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import chalk from 'chalk';
-import * as ts from 'typescript';
+import ts from 'typescript';
 
 interface TableSchema {
   Row: Record<string, string | undefined>;
