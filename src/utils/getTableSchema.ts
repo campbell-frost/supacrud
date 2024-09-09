@@ -16,10 +16,10 @@ interface DatabaseSchema {
 export default async function getTableSchema<T extends keyof DatabaseSchema>(tableName: T): Promise<DatabaseSchema[T] | null> {
   const currentDir = process.cwd();
   const typesDir = path.join(currentDir, 'types', 'supabase.ts');
-  
+
   try {
     const file = fs.readFileSync(typesDir, 'utf-8');
-    
+
     const sourceFile = ts.createSourceFile(
       'supabase.ts',
       file,
@@ -47,15 +47,15 @@ export default async function getTableSchema<T extends keyof DatabaseSchema>(tab
     const tableNode = findTableInterface(sourceFile);
 
     if (tableNode && ts.isPropertySignature(tableNode) && tableNode.type && ts.isTypeLiteralNode(tableNode.type)) {
-      const rowProperty = tableNode.type.members.find(member => 
-        ts.isPropertySignature(member) && 
-        ts.isIdentifier(member.name) && 
+      const rowProperty = tableNode.type.members.find(member =>
+        ts.isPropertySignature(member) &&
+        ts.isIdentifier(member.name) &&
         member.name.text === 'Row'
       );
 
       if (rowProperty && ts.isPropertySignature(rowProperty) && rowProperty.type && ts.isTypeLiteralNode(rowProperty.type)) {
         const rowObject: Record<string, string | undefined> = {};
-        
+
         rowProperty.type.members.forEach(member => {
           if (ts.isPropertySignature(member) && ts.isIdentifier(member.name)) {
             const propertyName = member.name.text;
@@ -77,7 +77,12 @@ export default async function getTableSchema<T extends keyof DatabaseSchema>(tab
     console.error(chalk.red(`Table '${tableName}' or its Row interface not found in the types file.`));
     return null;
   } catch (error) {
-    console.error(chalk.red(`Error retrieving Types file. Have you run supabase gen types?: ${error.message}`));
-    return null;
+    if (error instanceof Error) {
+      console.error(chalk.red(`Error retrieving Types file. Have you run supabase gen types?: ${error.message}`));
+      return null;
+    } else {
+      console.error(chalk.red(`Error retrieving Types file. Have you run supabase gen types?: ${error}`));
+      return null;
+    }
   }
 }

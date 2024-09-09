@@ -1,9 +1,9 @@
 import { input, select } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import chalk from 'chalk';
-import { SupabaseConnection } from '../utils/supabaseConnection.js';
-import { ConfigManager } from '../utils/configManager.js';
-import { OpProvider } from '../utils/opProvider.js';
+import { SupabaseConnection } from './utils/supabaseConnection.js';
+import { ConfigManager } from './utils/configManager.js';
+import { OpProvider } from './utils/opProvider.js';
 
 export default class Supacrud extends Command {
 
@@ -101,7 +101,9 @@ export default class Supacrud extends Command {
       }
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error) {
-      this.log(chalk.red('An error occured', error.message));
+      if (error instanceof Error) {
+        this.log(chalk.red('An error occured', error.message));
+      }
     }
   }
 }

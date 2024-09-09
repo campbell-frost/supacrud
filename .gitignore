@@ -3,8 +3,6 @@
 /.nyc_output
 /coverage
 /coverage.lcov
-/lib
-/dist
 /node_modules
 /tmp
 /test/tmp
@@ -15,3 +13,4 @@ oclif.manifest.json
 supabase
 data/
 types/
+dist/

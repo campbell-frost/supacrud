@@ -16,8 +16,13 @@ export async function createFileName(tableName: string, opName: string): Promise
     return destinationPath;
   }
   catch (error) {
-    console.log(`An error occurred creating the path for ${tableName}: ${error.message}`);
-    throw error;
+    if (error instanceof Error) {
+      console.log(`An error occurred creating the path for ${tableName}: ${error.message}`);
+      throw error;
+    } else {
+      console.log(`An error occurred creating the path for ${tableName}: ${error}`);
+      throw error;
+    }
   }
 }
 
@@ -68,7 +73,9 @@ ${data}
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Create operation file created successfully at ${filePath}`));
   } catch (error) {
-    console.error(chalk.red(`Error creating create operation file: ${error.message}`));
+    if (error instanceof Error) {
+      console.error(chalk.red(`Error creating create operation file: ${error.message}`));
+    }
   }
 }
 
@@ -96,13 +103,16 @@ export async function read${formattedTableName}() {
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Read operation file created successfully at ${filePath}`));
   } catch (error) {
-    console.error(chalk.red(`Error creating read operation file: ${error.message}`));
+    if (error instanceof Error) {
+
+      console.error(chalk.red(`Error creating read operation file: ${error.message}`));
+    }
   }
 }
 
 export async function updateOps(tableName: string): Promise<void> {
   try {
-    
+
     const schema = await getTableSchema(tableName);
     if (!schema) {
       throw new Error(`Schema for table '${tableName}' not found.`);
@@ -140,7 +150,9 @@ export async function update${formattedTableName}(formData: update${formattedTab
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Update operation file created successfully at ${filePath}`));
   } catch (error) {
-    console.error(chalk.red(`Error creating update operation file: ${error.message}`));
+    if (error instanceof Error) {
+      console.error(chalk.red(`Error creating update operation file: ${error.message}`));
+    }
   }
 }
 
@@ -170,7 +182,9 @@ export async function delete${formattedTableName}(id: delete${tableName}Props) {
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`Delete operation file created successfully at ${filePath}`));
   } catch (error) {
-    console.error(chalk.red(`Error creating delete operation file: ${error.message}`));
+    if (error instanceof Error) {
+      console.error(chalk.red(`Error creating delete operation file: ${error.message}`));
+    }
   }
 }
 
@@ -199,7 +213,9 @@ export default async function get${formattedTableName}(){
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`List operation file created successfully at ${filePath}`));
   } catch (error) {
-    console.error(chalk.red(`Error creating list operation file: ${error.message}`));
+    if (error instanceof Error) {
+      console.error(chalk.red(`Error creating list operation file: ${error.message}`));
+    }
   }
 }
 

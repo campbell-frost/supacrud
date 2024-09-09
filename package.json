@@ -1,9 +1,9 @@
 {
-  "name": "supacrud",
-  "version": "0.1.0",
+  "name": "supacrud-test",
+  "version": "0.9.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1", 
+    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
@@ -24,9 +24,12 @@
   },
   "oclif": {
     "bin": "supacrud",
-    "commands": "/dist/commands",
+    "commands": {
+      "strategy": "single",
+      "target": "./dist/supacrud.js"
+    },
     "dirname": "supacrud",
-    "topicSeparator": " ", 
+    "topicSeparator": " ",
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-warn-if-update-available",
