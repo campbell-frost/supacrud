@@ -19,6 +19,10 @@ export const getConfig = async (configDir: string): Promise<Config> => {
 }
 
 export const findEnvConfig = async (rootDir: string): Promise<Config> => {
+  const config: Config = {
+    projectUrl: "",
+    apiKey: ""
+  };
   const envFiles = ['.env', '.env.local'];
   let fileContents = '';
 
@@ -29,28 +33,23 @@ export const findEnvConfig = async (rootDir: string): Promise<Config> => {
       break;
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        return {} as Config;
+        return config;
       }
     }
   }
 
   if (!fileContents) {
-    return {} as Config;
+    return config;
   }
 
   try {
     const [lineOne, lineTwo] = fileContents.split('\n');
-    const projectUrl = lineOne.split("=")[1];
-    const apiKey = lineTwo.split("=")[1];
-
-    const config: Config = {
-      projectUrl,
-      apiKey
-    };
+    config.projectUrl = lineOne.split("=")[1];
+    config.apiKey = lineTwo.split("=")[1];
 
     return config;
   } catch (error) {
-    return {} as Config;
+    return config;
   }
 }
 
