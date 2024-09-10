@@ -15,10 +15,11 @@ export const getConfig = async (configDir: string): Promise<Config> => {
   }
 
   const creds = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  console.log(creds);
   return creds;
 }
 
-export const saveConfig = async (configDir: string, config: Config): Promise<void> => {
+const saveConfig = async (configDir: string, config: Config): Promise<void> => {
   const configPath = path.join(configDir, 'config.json');
   try {
     await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
@@ -28,21 +29,21 @@ export const saveConfig = async (configDir: string, config: Config): Promise<voi
   }
 }
 
-  const createDefaultConfig =async (configPath: string): Promise <void> => {
+const createDefaultConfig = async (configPath: string): Promise<void> => {
   try {
     const defaultConfig = { projectUrl: '', apiKey: '' };
     await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
     await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2));
-  } catch(error: any) {
+  } catch (error: any) {
     console.log(chalk.red('Failed to create default config:', error.message));
   }
 }
 
-  export const updateCredentials = async (configDir: string): Promise <void> => {
+export const updateCredentials = async (configDir: string): Promise<void> => {
   const shouldUpdate = await confirm({
     message: 'Are you sure you want to update your Supabase credentials?',
   });
-  if(shouldUpdate) {
+  if (shouldUpdate) {
     await setCredentials(configDir, false);
   }
 }

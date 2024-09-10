@@ -7,6 +7,11 @@ function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+type Config = {
+  projectUrl: string;
+  apiKey: string;
+}
+
 export const createFileName = async (tableName: string, opName: string): Promise<string> => {
   const currentPath = process.cwd();
   const destinationDir = path.join(currentPath, 'data', tableName);
@@ -26,7 +31,7 @@ export const createFileName = async (tableName: string, opName: string): Promise
   }
 }
 
-export const createOps = async (tableName: string): Promise<void> => {
+export const createOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const schema = await getTableSchema(tableName);
     if (!schema) {
@@ -45,15 +50,13 @@ export const createOps = async (tableName: string): Promise<void> => {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'create');
     const content = `
-import { createClient } from '@/utils/supabase/server';
-
+import { createClient } from "@supabase/supabase-js";
 interface create${formattedTableName}Props {
 ${createInterface}
 }
 
 export async function create${formattedTableName}(formData: create${formattedTableName}Props) {
-  const supabase = await createClient();
-  
+  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
   const data = {
 ${data}
   }
@@ -78,15 +81,15 @@ ${data}
   }
 }
 
-export const readOps = async (tableName: string): Promise<void> => {
+export const readOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'read');
     const content = `
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@supabase/supabase-js";
 
 export async function read${formattedTableName}() {
-  const supabase = await createClient();
+  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
 
   const { data, error } = await supabase
   .from('${tableName}')
@@ -109,7 +112,7 @@ export async function read${formattedTableName}() {
   }
 }
 
-export const updateOps = async (tableName: string): Promise<void> => {
+export const updateOps = async (tableName: string, config: Config): Promise<void> => {
   try {
 
     const schema = await getTableSchema(tableName);
@@ -124,14 +127,14 @@ export const updateOps = async (tableName: string): Promise<void> => {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'update');
     const content = `
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@supabase/supabase-js";
 
 interface update${formattedTableName}Props {
 ${updateInterface}
 }
 
 export async function update${formattedTableName}(formData: update${formattedTableName}Props) {
-  const supabase = await createClient();
+  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
   const { data: result, error } = await supabase
     .from('${tableName}')
     .update(formData)
@@ -153,19 +156,19 @@ export async function update${formattedTableName}(formData: update${formattedTab
   }
 }
 
-export const deleteOps = async (tableName: string): Promise<void> => {
+export const deleteOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'delete');
     const content = `
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@supabase/supabase-js";
 
 interface delete${formattedTableName}Props {
   id: string;
 }
 
 export async function delete${formattedTableName}(id: delete${formattedTableName}Props) {
-  const supabase = await createClient();
+  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
 
   const { error } = await supabase.from('${tableName}').delete().eq('id', id);
   if (error) {
@@ -184,16 +187,16 @@ export async function delete${formattedTableName}(id: delete${formattedTableName
   }
 }
 
-export const listOps = async (tableName: string): Promise<void> => {
+export const listOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'list');
     const content =
       `
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 export default async function get${formattedTableName}(){
-    const supabase = await createClient();
+  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
     const { data: ${tableName}, error } = await supabase
     .from('${tableName}')
     .select('*')
@@ -216,11 +219,11 @@ export default async function get${formattedTableName}(){
 }
 
 
-export const allOps = async (tableName: string): Promise<void> => {
-  await createOps(tableName);
-  await readOps(tableName);
-  await updateOps(tableName);
-  await deleteOps(tableName);
-  await listOps(tableName);
+export const allOps = async (tableName: string, config: Config): Promise<void> => {
+  await createOps(tableName, config);
+  await readOps(tableName, config);
+  await updateOps(tableName, config);
+  await deleteOps(tableName, config);
+  await listOps(tableName, config);
   console.log(chalk.green(`All CRUD operation files generated for table: ${tableName}`));
 }

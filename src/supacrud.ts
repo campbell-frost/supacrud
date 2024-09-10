@@ -48,9 +48,9 @@ export default class Supacrud extends Command {
     });
   }
 
-  async performCRUDOperation(table: string): Promise<void> {
+  async performCRUDOperation(table: string, config: { projectUrl: string; apiKey: string; }): Promise<void> {
     const operation = await this.selectCrudOperation();
-    const crudOperation = opProvider.getOperation(operation, table);
+    const crudOperation = opProvider.getOperation(operation, table, config);
     await crudOperation.execute();
   }
 
@@ -58,6 +58,7 @@ export default class Supacrud extends Command {
     try {
       const configDir = this.config.configDir;
       await supabaseConnection.connect(this.config.configDir);
+      const config = await configManager.getConfig(configDir);
       const { flags } = await this.parse(Supacrud);
       if (flags['set-creds']) {
         await configManager.updateCredentials(configDir);
@@ -81,10 +82,10 @@ export default class Supacrud extends Command {
       if (flags.list) ops.push('list');
 
       if (ops.length === 0) {
-        await this.performCRUDOperation(table);
+        await this.performCRUDOperation(table, config);
       } else {
         for (const op of ops) {
-          const crudOp = opProvider.getOperation(op, table);
+          const crudOp = opProvider.getOperation(op, table, config);
           await crudOp.execute();
         }
       }
