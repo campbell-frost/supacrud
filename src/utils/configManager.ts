@@ -67,7 +67,6 @@ const saveConfig = async (configDir: string, config: Config): Promise<void> => {
 const createDefaultConfig = async (configPath: string): Promise<void> => {
   try {
     const defaultConfig = await findEnvConfig(process.cwd());
-    console.log(defaultConfig);
     await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
     await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2));
   } catch (error: any) {
@@ -77,6 +76,11 @@ const createDefaultConfig = async (configPath: string): Promise<void> => {
       console.log(chalk.red('Failed to create default config:', error));
     }
   }
+}
+
+export const getProjectName = () => {
+  const dir = process.cwd().split('/');
+  return dir[dir.length - 1] || dir[dir.length - 2];
 }
 
 export const updateCredentials = async (configDir: string): Promise<void> => {

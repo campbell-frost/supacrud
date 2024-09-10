@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import * as configManager from './utils/configManager.js';
 import * as supabaseConnection from './utils/supabaseConnection.js';
 import * as opProvider from './utils/opProvider.js';
+import path from 'path';
 
 export default class Supacrud extends Command {
   static examples = [
@@ -53,11 +54,13 @@ export default class Supacrud extends Command {
     const crudOperation = opProvider.getOperation(operation, table, config);
     await crudOperation.execute();
   }
-
+  
   async run(): Promise<void> {
     try {
+      this.config.configDir = path.join(this.config.configDir, configManager.getProjectName());
       const configDir = this.config.configDir;
-      await supabaseConnection.connect(this.config.configDir);
+      console.log(configDir)
+      await supabaseConnection.connect(configDir);
       const config = await configManager.getConfig(configDir);
       const { flags } = await this.parse(Supacrud);
       if (flags['set-creds']) {
