@@ -25,7 +25,8 @@ export const findEnvConfig = async (rootDir: string): Promise<Config> => {
   };
 
   const files = await fs.promises.readdir(rootDir);
-  const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));  let fileContents = '';
+  const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));
+  let fileContents = '';
 
   for (const file of envFiles) {
     const filePath = path.join(rootDir, file);
