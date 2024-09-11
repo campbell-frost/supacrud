@@ -3,7 +3,7 @@ import path from 'path';
 import { input, password, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 
-type Config = {
+export type Config = {
   projectUrl: string;
   apiKey: string;
 }
@@ -53,11 +53,10 @@ export const findEnvConfig = async (rootDir: string): Promise<Config> => {
   }
 }
 
-const saveConfig = async (configDir: string, config: Config): Promise<void> => {
+export const saveConfig = async (configDir: string, config: Config): Promise<void> => {
   const configPath = path.join(configDir, 'config.json');
   try {
     await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
-    console.log(chalk.green('Config saved successfully'));
   } catch (error: any) {
     console.log(chalk.red('Failed to save config:', error.message));
   }
@@ -107,33 +106,16 @@ export const setCredentials = async (configDir: string, firstTime: boolean): Pro
   }
 };
 
-export const areCredentialsSet = async (configDir: string): Promise<boolean> => {
-  const config = await getConfig(configDir);
-  return !!(config.projectUrl && config.apiKey);
-};
-
-const promptForApiKey = async (): Promise<string> => {
+export const promptForApiKey = async (): Promise<string> => {
   return password({
     message: 'Enter your Supabase API key:',
     validate: (value) => value.trim() !== '' || 'API key cannot be empty',
   });
 };
 
-const promptForUrl = async (): Promise<string> => {
+export const promptForUrl = async (): Promise<string> => {
   return input({
     message: 'Enter your Supabase project URL:',
     validate: (value) => value.trim() !== '' || 'Project URL cannot be empty',
   });
-};
-
-export const updateApiKey = async (configDir: string): Promise<void> => {
-  const apiKey = await promptForApiKey();
-  const currentConfig = await getConfig(configDir);
-  await saveConfig(configDir, { ...currentConfig, apiKey });
-};
-
-export const updateProjectUrl = async (configDir: string): Promise<void> => {
-  const projectUrl = await promptForUrl();
-  const currentConfig = await getConfig(configDir);
-  await saveConfig(configDir, { ...currentConfig, projectUrl });
 };

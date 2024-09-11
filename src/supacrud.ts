@@ -59,18 +59,12 @@ export default class Supacrud extends Command {
     try {
       this.config.configDir = path.join(this.config.configDir, configManager.getProjectName());
       const configDir = this.config.configDir;
-      console.log(configDir)
-      await supabaseConnection.connect(configDir);
+      await supabaseConnection.initializeSupabaseConnection(configDir)
       const config = await configManager.getConfig(configDir);
       const { flags } = await this.parse(Supacrud);
       if (flags['set-creds']) {
         await configManager.updateCredentials(configDir);
         return;
-      }
-
-      if (!(await configManager.areCredentialsSet(configDir))) {
-        this.log(chalk.yellow('Supabase credentials are not set. Let\'s set them up.  \nYour credentials can be found in your supabase project dashboard under Project Settings -> API'));
-        await configManager.setCredentials(configDir, true);
       }
 
       const table = flags.table || await this.promptForTable();
@@ -96,7 +90,7 @@ export default class Supacrud extends Command {
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error) {
       if (error instanceof Error) {
-        this.log(chalk.red('An error occurred', error.message));
+        this.log(chalk.red('An error occurred in supacrud.ts', error.message));
       }
     }
   }

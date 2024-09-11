@@ -2,36 +2,47 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as configManager from './configManager.js';
 import chalk from 'chalk';
 
-export const connect = async (configDir: string): Promise<void> => {
-  let config = await configManager.getConfig(configDir);
-  let connectionSuccessful = false;
+export const initializeSupabaseConnection = async (configDir: string): Promise<SupabaseClient> => {
+  let config = await getOrSetConfig(configDir);
   let supabase: SupabaseClient | null = null;
 
-  while (!connectionSuccessful) {
+  while (true) {
     try {
       supabase = createClient(config.projectUrl, config.apiKey);
       await testConnection(supabase);
-      connectionSuccessful = true;
+      console.log(chalk.green('Successfully connected to Supabase!'));
+      return supabase;
     } catch (error) {
       console.log(chalk.red('Failed to connect to Supabase. Your credentials might be invalid.'));
-
-      if (error instanceof Error && error.message.includes('Invalid API key')) {
-        console.log(chalk.yellow('Your API key seems to be invalid. Let\'s update it.'));
-        await configManager.updateApiKey(configDir);
-      } else if (error instanceof Error && error.message.includes('Invalid URL')) {
-        console.log(chalk.yellow('Your project URL seems to be invalid. Let\'s update it.'));
-        await configManager.updateProjectUrl(configDir);
-      } else {
-        console.log(chalk.yellow('Your project URL and your API key seem to be invalid. Let\'s try updating both.'));
-        await configManager.setCredentials(configDir, false);
-      }
-
-      config = await configManager.getConfig(configDir);
+      console.log(chalk.yellow('Your credentials can be found in your supabase project dashboard under Project Settings -> API'));
+      config = await promptForNewCredentials(configDir);
     }
   }
+};
 
-  console.log(chalk.green('Successfully connected to Supabase!'));
-}
+const getOrSetConfig = async (configDir: string): Promise<configManager.Config> => {
+  let config = await configManager.getConfig(configDir);
+  if (!config.projectUrl || !config.apiKey) {
+    const envConfig = await configManager.findEnvConfig(process.cwd());
+    if (envConfig.projectUrl && envConfig.apiKey) {
+      await configManager.saveConfig(configDir, envConfig);
+      return envConfig;
+    } else {
+      console.log(chalk.yellow('Supabase credentials are not set. Let\'s set them up.\nYour credentials can be found in your supabase project dashboard under Project Settings -> API'));
+      return await promptForNewCredentials(configDir);
+    }
+  }
+  return config;
+};
+
+const promptForNewCredentials = async (configDir: string): Promise<configManager.Config> => {
+  const projectUrl = await configManager.promptForUrl();
+  const apiKey = await configManager.promptForApiKey();
+  const newConfig = { projectUrl, apiKey };
+  await configManager.saveConfig(configDir, newConfig);
+  console.log(chalk.green('Credentials updated successfully!'));
+  return newConfig;
+};
 
 const testConnection = async (supabase: SupabaseClient): Promise<void> => {
   if (!supabase) {
@@ -46,4 +57,4 @@ const testConnection = async (supabase: SupabaseClient): Promise<void> => {
       throw new Error('Connection test failed with an unknown error');
     }
   }
-}
+};
