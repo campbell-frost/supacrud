@@ -8,6 +8,11 @@ export type Config = {
   apiKey: string;
 }
 
+export type EnvPreix = {
+  projectUrl: string;
+  apiKey: string;
+}
+
 export const getConfig = async (configDir: string): Promise<Config> => {
   const configPath = path.join(configDir, 'config.json');
   if (!fs.existsSync(configPath)) {
@@ -23,6 +28,11 @@ export const findEnvConfig = async (rootDir: string): Promise<Config> => {
     projectUrl: "",
     apiKey: ""
   };
+
+  const env: EnvPreix = {
+    projectUrl: "",
+    apiKey: "",
+  }
 
   const files = await fs.promises.readdir(rootDir);
   const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));
@@ -46,8 +56,8 @@ export const findEnvConfig = async (rootDir: string): Promise<Config> => {
 
   try {
     const [lineOne, lineTwo] = fileContents.split('\n');
-    config.projectUrl = lineOne.split("=")[1];
-    config.apiKey = lineTwo.split("=")[1];
+    [env.projectUrl, config.projectUrl] = lineOne.split("=");
+    [env.apiKey, config.apiKey] = lineTwo.split("=");
 
     return config;
   } catch (error) {
