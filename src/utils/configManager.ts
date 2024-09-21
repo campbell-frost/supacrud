@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { input, password, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
+import { isBreakStatement } from 'typescript';
 
 export type Config = {
   env: boolean;
@@ -18,7 +19,6 @@ export type Config = {
 export const findEnvConfig = async (rootDir: string): Promise<Config | null> => {
   const files = await fs.promises.readdir(rootDir);
   const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));
-  console.log("hi");
   for (const file of envFiles) {
     const filePath = path.join(rootDir, file);
     try {
@@ -28,17 +28,23 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
       let [apiKeyPrefix, apiKeyValue] = "";
 
       for (const line of lines) {
-        console.log(line);
         if (line.includes("supabase.co")) {
           [projectUrlPrefix, projectUrlValue] = line.split('=');
-        } else if (isJwt(line.split("=")[1])) {
-          const jwt: any = decodeJwt(line.split("=")[1]);
-
+          break;
         }
       }
 
-      const decodedJwt = decodeJwt(apiKeyValue);
-      console.log(decodedJwt);
+      for (const line of lines) {
+        if (isJwt(line.split("=")[1])) {
+          const jwt = decodeJwt(line.split("=")[1])
+          // if the jwt includes the first part of the projectUrl, it is the key for the project.
+          if (jwt.includes(projectUrlValue.substring(8, 28))) {
+            [apiKeyPrefix, apiKeyValue] = line.split('=');
+            break;
+          } 
+        }
+      }
+
       return {
         env: true,
         prefix: {
