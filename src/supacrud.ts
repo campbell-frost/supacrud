@@ -5,7 +5,9 @@ import * as configManager from './utils/configManager.js';
 import * as supabaseConnection from './utils/supabaseConnection.js';
 import * as opProvider from './utils/opProvider.js';
 import path from 'path';
+import process from 'process';
 
+process.removeAllListeners('warning');
 export default class Supacrud extends Command {
   static examples = [
     '<%= config.bin %> <%= command.id %>',
