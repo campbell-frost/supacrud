@@ -18,41 +18,76 @@ export type Config = {
 export const findEnvConfig = async (rootDir: string): Promise<Config | null> => {
   const files = await fs.promises.readdir(rootDir);
   const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));
-
+  console.log("hi");
   for (const file of envFiles) {
     const filePath = path.join(rootDir, file);
     try {
       const fileContents = await fs.promises.readFile(filePath, 'utf-8');
       const lines = fileContents.split('\n');
+      let [projectUrlPrefix, projectUrlValue] = "";
+      let [apiKeyPrefix, apiKeyValue] = "";
 
-      if (lines.length >= 2) {
-        const [projectUrlLine, apiKeyLine] = lines;
-        const [projectUrlPrefix, projectUrlValue] = projectUrlLine.split('=');
-        const [apiKeyPrefix, apiKeyValue] = apiKeyLine.split('=');
+      for (const line of lines) {
+        console.log(line);
+        if (line.includes("supabase.co")) {
+          [projectUrlPrefix, projectUrlValue] = line.split('=');
+        } else if (isJwt(line.split("=")[1])) {
+          const jwt: any = decodeJwt(line.split("=")[1]);
 
-        if (projectUrlValue && apiKeyValue) {
-          return {
-            env: true,
-            prefix: {
-              projectUrl: projectUrlPrefix.trim(),
-              apiKey: apiKeyPrefix.trim(),
-            },
-            suffix: {
-              projectUrl: projectUrlValue.trim(),
-              apiKey: apiKeyValue.trim(),
-            },
-          };
         }
       }
+
+      const decodedJwt = decodeJwt(apiKeyValue);
+      console.log(decodedJwt);
+      return {
+        env: true,
+        prefix: {
+          projectUrl: projectUrlPrefix.trim(),
+          apiKey: apiKeyPrefix.trim(),
+        },
+        suffix: {
+          projectUrl: projectUrlValue.trim(),
+          apiKey: apiKeyValue.trim(),
+        },
+      };
+
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        console.error(`Error reading ${file}:`, error);
+        return null;
       }
     }
   }
 
   return null;
 };
+
+const decodeJwt = (jwt: string): string =>
+  jwt
+    .trim()
+    .split(".")
+    .map((s, i) => {
+      const decoded = atob(s.replace("-", "+").replace("_", "/"));
+      return i < 2 ? JSON.stringify(JSON.parse(decoded)) : decoded;
+    })
+    .join("");
+
+const isJwt = (token: string): boolean => {
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+
+  try {
+    const [header, payload, signature] = parts;
+    const headerDecoded = atob(header.replace(/-/g, '+').replace(/_/g, '/'));
+    const payloadDecoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+
+    JSON.parse(headerDecoded);
+    JSON.parse(payloadDecoded);
+
+    return signature.length > 0;
+  } catch (error) {
+    return false;
+  }
+}
 
 export const getConfig = async (configDir: string): Promise<Config> => {
   const configPath = path.join(configDir, 'config.json');

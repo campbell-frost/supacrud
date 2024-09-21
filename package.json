@@ -14,8 +14,7 @@
   "dependencies": {
     "@oclif/core": "^4.0.12",
     "@supabase/supabase-js": "^2.44.4",
-    "inquirer": "^10.1.0",
-    "typescript": "^5.5.3"
+    "inquirer": "^10.1.0"
   },
   "bin": {
     "supacrud": "bin/run.js"
@@ -37,7 +36,8 @@
   "devDependencies": {
     "@types/figlet": "^1.5.8",
     "@types/node": "^18.19.41",
-    "ts-node": "^10.9.2", 
-    "shx": "^0.3.3"
+    "ts-node": "^10.9.2",
+    "shx": "^0.3.3",
+    "typescript": "^5.5.3"
   }
 }
