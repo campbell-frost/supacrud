@@ -2,15 +2,20 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 import getTableSchema from './getTableSchema.js';
+import { Config } from './configManager.js';
 
 function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-type Config = {
-  projectUrl: string;
-  apiKey: string;
-}
+
+const generateSupabaseClientCode = (config: Config): string => {
+  if (config.env && config.prefix) {
+    return `const supabase = createClient(process.env.${config.prefix.projectUrl}, process.env.${config.prefix.apiKey});`;
+  } else {
+    return `const supabase = createClient("${config.suffix.projectUrl}", "${config.suffix.apiKey}");`;
+  }
+};
 
 export const createFileName = async (tableName: string, opName: string): Promise<string> => {
   const currentPath = process.cwd();
@@ -49,6 +54,8 @@ export const createOps = async (tableName: string, config: Config): Promise<void
 
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'create');
+    const supabaseClientCode = generateSupabaseClientCode(config);
+
     const content = `
 import { createClient } from "@supabase/supabase-js";
 interface create${formattedTableName}Props {
@@ -56,7 +63,7 @@ ${createInterface}
 }
 
 export async function create${formattedTableName}(formData: create${formattedTableName}Props) {
-  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
+  ${supabaseClientCode}
   const data = {
 ${data}
   }
@@ -79,17 +86,19 @@ ${data}
       console.error(chalk.red(`Error creating create operation file: ${error.message}`));
     }
   }
-}
+};
 
 export const readOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'read');
+    const supabaseClientCode = generateSupabaseClientCode(config);
+
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
 export async function read${formattedTableName}() {
-  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
+  ${supabaseClientCode}
 
   const { data, error } = await supabase
   .from('${tableName}')
@@ -106,11 +115,10 @@ export async function read${formattedTableName}() {
     console.log(chalk.green(`Read operation file created successfully at ${filePath}`));
   } catch (error) {
     if (error instanceof Error) {
-
       console.error(chalk.red(`Error creating read operation file: ${error.message}`));
     }
   }
-}
+};
 
 export const updateOps = async (tableName: string, config: Config): Promise<void> => {
   try {
@@ -126,6 +134,8 @@ export const updateOps = async (tableName: string, config: Config): Promise<void
 
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'update');
+    const supabaseClientCode = generateSupabaseClientCode(config);
+
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
@@ -134,7 +144,7 @@ ${updateInterface}
 }
 
 export async function update${formattedTableName}(formData: update${formattedTableName}Props) {
-  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
+  ${supabaseClientCode}
   const { data: result, error } = await supabase
     .from('${tableName}')
     .update(formData)
@@ -160,6 +170,8 @@ export const deleteOps = async (tableName: string, config: Config): Promise<void
   try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'delete');
+    const supabaseClientCode = generateSupabaseClientCode(config);
+
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
@@ -168,7 +180,7 @@ interface delete${formattedTableName}Props {
 }
 
 export async function delete${formattedTableName}(id: delete${formattedTableName}Props) {
-  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
+  ${supabaseClientCode}
 
   const { error } = await supabase.from('${tableName}').delete().eq('id', id);
   if (error) {
@@ -191,12 +203,14 @@ export const listOps = async (tableName: string, config: Config): Promise<void> 
   try {
     const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'list');
+    const supabaseClientCode = generateSupabaseClientCode(config);
+
     const content =
       `
 import { createClient } from "@supabase/supabase-js";
 
 export default async function get${formattedTableName}(){
-  const supabase = createClient("${config.projectUrl}", "${config.apiKey}");
+  ${supabaseClientCode}
     const { data: ${tableName}, error } = await supabase
     .from('${tableName}')
     .select('*')

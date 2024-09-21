@@ -8,7 +8,7 @@ export const initializeSupabaseConnection = async (configDir: string): Promise<S
 
   while (true) {
     try {
-      supabase = createClient(config.projectUrl, config.apiKey);
+      supabase = createClient(config.suffix.projectUrl, config.suffix.apiKey);
       await testConnection(supabase);
       console.log(chalk.green('Successfully connected to Supabase!'));
       return supabase;
@@ -22,9 +22,9 @@ export const initializeSupabaseConnection = async (configDir: string): Promise<S
 
 const getOrSetConfig = async (configDir: string): Promise<configManager.Config> => {
   let config = await configManager.getConfig(configDir);
-  if (!config.projectUrl || !config.apiKey) {
+  if (!config.suffix.projectUrl || !config.suffix.apiKey) {
     const envConfig = await configManager.findEnvConfig(process.cwd());
-    if (envConfig.projectUrl && envConfig.apiKey) {
+    if (envConfig.suffix.projectUrl && envConfig.suffix.apiKey) {
       await configManager.saveConfig(configDir, envConfig);
       return envConfig;
     } else {
@@ -38,7 +38,10 @@ const getOrSetConfig = async (configDir: string): Promise<configManager.Config> 
 const promptForNewCredentials = async (configDir: string): Promise<configManager.Config> => {
   const projectUrl = await configManager.promptForUrl();
   const apiKey = await configManager.promptForApiKey();
-  const newConfig = { projectUrl, apiKey };
+  const newConfig: configManager.Config = {
+    env: false,
+    suffix: { projectUrl, apiKey }
+  };
   await configManager.saveConfig(configDir, newConfig);
   console.log(chalk.green('Credentials updated successfully!'));
   return newConfig;

@@ -4,66 +4,64 @@ import { input, password, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 
 export type Config = {
-  projectUrl: string;
-  apiKey: string;
-}
-
-export type EnvPreix = {
-  projectUrl: string;
-  apiKey: string;
-}
-
-export const getConfig = async (configDir: string): Promise<Config> => {
-  const configPath = path.join(configDir, 'config.json');
-  if (!fs.existsSync(configPath)) {
-    await createDefaultConfig(configPath);
-  }
-
-  const creds = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  return creds;
-}
-
-export const findEnvConfig = async (rootDir: string): Promise<Config> => {
-  const config: Config = {
-    projectUrl: "",
-    apiKey: ""
+  env: boolean;
+  prefix?: {
+    projectUrl: string;
+    apiKey: string;
   };
+  suffix: {
+    projectUrl: string;
+    apiKey: string;
+  };
+};
 
-  const env: EnvPreix = {
-    projectUrl: "",
-    apiKey: "",
-  }
-
+export const findEnvConfig = async (rootDir: string): Promise<Config | null> => {
   const files = await fs.promises.readdir(rootDir);
   const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));
-  let fileContents = '';
 
   for (const file of envFiles) {
     const filePath = path.join(rootDir, file);
     try {
-      fileContents = fs.readFileSync(filePath, 'utf-8');
-      break;
+      const fileContents = await fs.promises.readFile(filePath, 'utf-8');
+      const lines = fileContents.split('\n');
+
+      if (lines.length >= 2) {
+        const [projectUrlLine, apiKeyLine] = lines;
+        const [projectUrlPrefix, projectUrlValue] = projectUrlLine.split('=');
+        const [apiKeyPrefix, apiKeyValue] = apiKeyLine.split('=');
+
+        if (projectUrlValue && apiKeyValue) {
+          return {
+            env: true,
+            prefix: {
+              projectUrl: projectUrlPrefix.trim(),
+              apiKey: apiKeyPrefix.trim(),
+            },
+            suffix: {
+              projectUrl: projectUrlValue.trim(),
+              apiKey: apiKeyValue.trim(),
+            },
+          };
+        }
+      }
     } catch (error) {
       if (error.code !== 'ENOENT') {
-        return config;
+        console.error(`Error reading ${file}:`, error);
       }
     }
   }
 
-  if (!fileContents) {
-    return config;
-  }
+  return null;
+};
 
-  try {
-    const [lineOne, lineTwo] = fileContents.split('\n');
-    [env.projectUrl, config.projectUrl] = lineOne.split("=");
-    [env.apiKey, config.apiKey] = lineTwo.split("=");
-
-    return config;
-  } catch (error) {
-    return config;
+export const getConfig = async (configDir: string): Promise<Config> => {
+  const configPath = path.join(configDir, 'config.json');
+  if (!fs.existsSync(configPath)) {
+    return createDefaultConfig(configPath);
   }
-}
+  const config = JSON.parse(await fs.promises.readFile(configPath, 'utf8'));
+  return config;
+};
 
 export const saveConfig = async (configDir: string, config: Config): Promise<void> => {
   const configPath = path.join(configDir, 'config.json');
@@ -72,21 +70,31 @@ export const saveConfig = async (configDir: string, config: Config): Promise<voi
   } catch (error: any) {
     console.log(chalk.red('Failed to save config:', error.message));
   }
-}
+};
 
-const createDefaultConfig = async (configPath: string): Promise<void> => {
+const createDefaultConfig = async (configPath: string): Promise<Config> => {
   try {
-    const defaultConfig = await findEnvConfig(process.cwd());
-    await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
-    await fs.promises.writeFile(configPath, JSON.stringify(defaultConfig, null, 2));
-  } catch (error: any) {
-    if (error instanceof Error) {
-      console.log(chalk.red('Failed to create default config:', error.message));
+    const envConfig = await findEnvConfig(process.cwd());
+    if (envConfig) {
+      await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
+      await fs.promises.writeFile(configPath, JSON.stringify(envConfig, null, 2));
+      return envConfig;
     } else {
-      console.log(chalk.red('Failed to create default config:', error));
+      const projectUrl = await promptForUrl();
+      const apiKey = await promptForApiKey();
+      const config: Config = {
+        env: false,
+        suffix: { projectUrl, apiKey },
+      };
+      await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
+      await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
+      return config;
     }
+  } catch (error: any) {
+    console.log(chalk.red('Failed to create default config:', error.message));
+    throw error;
   }
-}
+};
 
 export const getProjectName = () => {
   const dir = process.cwd().split('/');
@@ -100,7 +108,7 @@ export const updateCredentials = async (configDir: string): Promise<void> => {
   if (shouldUpdate) {
     await setCredentials(configDir, false);
   }
-}
+};
 
 export const setCredentials = async (configDir: string, firstTime: boolean): Promise<void> => {
   let shouldUpdate = firstTime;
@@ -111,9 +119,22 @@ export const setCredentials = async (configDir: string, firstTime: boolean): Pro
   }
 
   if (shouldUpdate) {
-    const projectUrl = await promptForUrl();
-    const apiKey = await promptForApiKey();
-    await saveConfig(configDir, { projectUrl, apiKey });
+    const envConfig = await findEnvConfig(process.cwd());
+
+    if (envConfig) {
+      await saveConfig(configDir, envConfig);
+    } else {
+      const projectUrl = await promptForUrl();
+      const apiKey = await promptForApiKey();
+
+      const newConfig: Config = {
+        env: false,
+        suffix: { projectUrl, apiKey }
+      };
+
+      await saveConfig(configDir, newConfig);
+    }
+
     console.log(chalk.green('Credentials updated successfully!'));
   }
 };

@@ -1,13 +1,11 @@
+import { Config } from './configManager.js';
 import { createOps, readOps, updateOps, deleteOps, allOps, listOps } from './crudWrites.js';
 
 export interface CrudOperation {
   execute(): Promise<void>;
 }
 
-type Config = {
-  projectUrl: string;
-  apiKey: string;
-}
+
 
 export const getOperation = (
   operation: string,

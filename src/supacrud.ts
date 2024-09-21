@@ -51,7 +51,7 @@ export default class Supacrud extends Command {
     });
   }
 
-  async performCRUDOperation(table: string, config: { projectUrl: string; apiKey: string; }): Promise<void> {
+  async performCRUDOperation(table: string, config: configManager.Config): Promise<void> {
     const operation = await this.selectCrudOperation();
     const crudOperation = opProvider.getOperation(operation, table, config);
     await crudOperation.execute();
@@ -61,11 +61,12 @@ export default class Supacrud extends Command {
     try {
       this.config.configDir = path.join(this.config.configDir, configManager.getProjectName());
       const configDir = this.config.configDir;
-      await supabaseConnection.initializeSupabaseConnection(configDir)
+      await supabaseConnection.initializeSupabaseConnection(configDir);
       const config = await configManager.getConfig(configDir);
       const { flags } = await this.parse(Supacrud);
+
       if (flags['set-creds']) {
-        await configManager.updateCredentials(configDir);
+        await configManager.setCredentials(configDir, false);
         return;
       }
 
@@ -92,7 +93,7 @@ export default class Supacrud extends Command {
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error) {
       if (error instanceof Error) {
-        this.log(chalk.red('An error occurred in supacrud.ts', error.message));
+        this.log(chalk.red('An error occurred: ', error.message));
       }
     }
   }
