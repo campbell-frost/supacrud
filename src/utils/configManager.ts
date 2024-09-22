@@ -69,15 +69,13 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
   return null;
 };
 
-const decodeJwt = (jwt: string): string =>
-  jwt
-    .trim()
-    .split(".")
-    .map((s, i) => {
-      const decoded = atob(s.replace("-", "+").replace("_", "/"));
-      return i < 2 ? JSON.stringify(JSON.parse(decoded)) : decoded;
-    })
-    .join("");
+const decodeJwt = (jwt: string): string => {
+  try {
+    return jwt.split(".").map((s, i) => i < 2 ? atob(s.replace("-", "+").replace("_", "/")) : s).toString();
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 const isJwt = (token: string): boolean => {
   const parts = token.split('.');
