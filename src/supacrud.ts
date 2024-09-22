@@ -6,8 +6,10 @@ import * as supabaseConnection from './utils/supabaseConnection.js';
 import * as opProvider from './utils/opProvider.js';
 import path from 'path';
 import process from 'process';
+import ora from 'ora';
 
 process.removeAllListeners('warning');
+
 export default class Supacrud extends Command {
   static examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -56,13 +58,16 @@ export default class Supacrud extends Command {
     const crudOperation = opProvider.getOperation(operation, table, config);
     await crudOperation.execute();
   }
-  
+
   async run(): Promise<void> {
+    const spinner = ora();
     try {
+      spinner.start();
       this.config.configDir = path.join(this.config.configDir, configManager.getProjectName());
       const configDir = this.config.configDir;
       await supabaseConnection.initializeSupabaseConnection(configDir);
       const config = await configManager.getConfig(configDir);
+      spinner.stop()
       const { flags } = await this.parse(Supacrud);
 
       if (flags['set-creds']) {
@@ -92,6 +97,7 @@ export default class Supacrud extends Command {
 
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error) {
+      spinner.stop();
       if (error instanceof Error) {
         this.log(chalk.red('An error occurred: ', error.message));
       }

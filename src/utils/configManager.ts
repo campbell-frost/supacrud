@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { input, password, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { isBreakStatement } from 'typescript';
 
 export type Config = {
   env: boolean;
@@ -24,8 +23,11 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
     try {
       const fileContents = await fs.promises.readFile(filePath, 'utf-8');
       const lines = fileContents.split('\n');
-      let [projectUrlPrefix, projectUrlValue] = "";
-      let [apiKeyPrefix, apiKeyValue] = "";
+      let projectUrlPrefix: string | undefined = undefined;
+      let projectUrlValue: string | undefined = undefined;
+      let apiKeyPrefix: string | undefined = undefined;
+      let apiKeyValue: string | undefined = undefined;
+
 
       for (const line of lines) {
         if (line.includes("supabase.co")) {
@@ -41,7 +43,7 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
           if (jwt.includes(projectUrlValue.substring(8, 28))) {
             [apiKeyPrefix, apiKeyValue] = line.split('=');
             break;
-          } 
+          }
         }
       }
 
@@ -82,14 +84,9 @@ const isJwt = (token: string): boolean => {
   if (parts.length !== 3) return false;
 
   try {
-    const [header, payload, signature] = parts;
+    const [header, _, signature] = parts;
     const headerDecoded = atob(header.replace(/-/g, '+').replace(/_/g, '/'));
-    const payloadDecoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-
-    JSON.parse(headerDecoded);
-    JSON.parse(payloadDecoded);
-
-    return signature.length > 0;
+    return headerDecoded.includes("alg") && headerDecoded.includes("JWT") && signature.length > 0;
   } catch (error) {
     return false;
   }
