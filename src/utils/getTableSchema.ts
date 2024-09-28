@@ -20,8 +20,16 @@ export default async function getTableSchema<T extends keyof DatabaseSchema>(tab
     path.join(currentDir, 'database.types.ts')
   ];
 
+  let fileFound = false;
+  let parsingError = false;
+
   for (const typesPath of typesPaths) {
     try {
+      if (!fs.existsSync(typesPath)) {
+        continue; // File doesn't exist, try the next path
+      }
+
+      fileFound = true;
       const file = fs.readFileSync(typesPath, 'utf-8');
       const sourceFile = ts.createSourceFile(
         path.basename(typesPath),
@@ -72,10 +80,19 @@ export default async function getTableSchema<T extends keyof DatabaseSchema>(tab
         }
       }
     } catch (error) {
-      // If the file doesn't exist or there's an error reading it, we'll try the next path
-      continue;
+      parsingError = true;
+      console.error(chalk.yellow(`Error parsing file ${typesPath}:`, error));
     }
   }
-  console.error(chalk.red(`Error retrieving Types file. Have you run supabase gen types?`));
+
+  if (!fileFound) {
+    console.error(chalk.red(`No types files found. Have you run 'supabase gen types'?`));
+    console.error(chalk.yellow(`You can get started here: https://supabase.com/docs/guides/api/rest/generating-types`))
+  } else if (parsingError) {
+    console.error(chalk.red(`Error occurred while parsing the types file(s).`));
+  } else {
+    console.error(chalk.red(`Table '${tableName}' or its Row interface not found in any of the types files.`));
+  }
+
   return null;
 }

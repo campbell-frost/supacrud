@@ -10,7 +10,9 @@ function capitalizeFirstLetter(string: string): string {
 
 const generateSupabaseClientCode = (config: Config): string => {
   if (config.env && config.prefix) {
-    return `const supabase = createClient(process.env.${config.prefix.projectUrl}, process.env.${config.prefix.apiKey});`;
+    return `const supabaseUrl = process.env.${config.prefix.projectUrl};
+  const supabaseKey = process.env.${config.prefix.apiKey};\n
+  const supabase = createClient(supabaseUrl!, supabaseKey!);`;
   } else {
     return `const supabase = createClient("${config.suffix.projectUrl}", "${config.suffix.apiKey}");`;
   }
@@ -34,7 +36,6 @@ export const createFileName = async (tableName: string, opName: string): Promise
     }
   }
 }
-
 export const createOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const schema = await getTableSchema(tableName);
@@ -42,39 +43,39 @@ export const createOps = async (tableName: string, config: Config): Promise<void
       throw new Error(`Schema for table '${tableName}' not found.`);
     }
 
+    const formattedTableName = capitalizeFirstLetter(tableName);
     const createInterface = Object.entries(schema.Row)
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
 
     const data = Object.entries(schema.Row)
       .filter(([key]) => key !== 'id')
-      .map(([key]) => `    ${key}: formData.${key},`)
+      .map(([key]) => `    ${key}: new${formattedTableName}.${key},`)
       .join('\n');
 
-    const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'create');
     const supabaseClientCode = generateSupabaseClientCode(config);
-
     const content = `
 import { createClient } from "@supabase/supabase-js";
-interface create${formattedTableName}Props {
+
+interface Create${formattedTableName}Props {
 ${createInterface}
 }
 
-export async function create${formattedTableName}(formData: create${formattedTableName}Props) {
+export const create${formattedTableName} = async (new${formattedTableName}: Create${formattedTableName}Props) => {
   ${supabaseClientCode}
   const data = {
 ${data}
   }
 
   const { error } = await supabase
-  .from('${tableName}')
-  .insert(data);
-
-  if (error) {
+    .from('trips')
+    .insert(data)
+    .single();
+  
+  if (error instanceof Error) {
     throw new Error(\`Error adding data: \${error.message}\`);
   }
-
   return { success: true };
 }
 `.trim();
@@ -96,14 +97,14 @@ export const readOps = async (tableName: string, config: Config): Promise<void> 
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
-export async function read${formattedTableName}() {
+export const read${formattedTableName} = async () => {
   ${supabaseClientCode}
 
   const { data, error } = await supabase
-  .from('${tableName}')
-  .select('*');
+    .from('${tableName}')
+    .select('*');
 
-  if(error){
+  if (error instanceof Error) {
     throw new Error(\`Error reading data: \${error.message}\`);
   }
   
@@ -142,16 +143,16 @@ interface update${formattedTableName}Props {
 ${updateInterface}
 }
 
-export async function update${formattedTableName}(formData: update${formattedTableName}Props) {
+export const update${formattedTableName} = async (updated${formattedTableName}: update${formattedTableName}Props) => {
   ${supabaseClientCode}
   const { data: result, error } = await supabase
     .from('${tableName}')
-    .update(formData)
-    .eq('id', formData.id)
+    .update(updated${formattedTableName})
+    .eq('id', updated${formattedTableName}.id)
     .select();
   
-  if (error){
-      throw new Error(\`Error uploading data: \${error.message}\`);
+  if (error instanceof Error) {
+    throw new Error(\`Error uploading data: \${error.message}\`);
   }
   return result;
 }
@@ -178,11 +179,11 @@ interface delete${formattedTableName}Props {
   id: string;
 }
 
-export async function delete${formattedTableName}(id: delete${formattedTableName}Props) {
+export const delete${formattedTableName} = async (id: delete${formattedTableName}Props) => {
   ${supabaseClientCode}
 
   const { error } = await supabase.from('${tableName}').delete().eq('id', id);
-  if (error) {
+  if (error instanceof Error) {
     throw new Error(\`Error deleting data: \${error.message}\`);
   }
 
@@ -208,17 +209,18 @@ export const listOps = async (tableName: string, config: Config): Promise<void> 
       `
 import { createClient } from "@supabase/supabase-js";
 
-export default async function get${formattedTableName}(){
+export const get${formattedTableName} = async () => {
   ${supabaseClientCode}
-    const { data: ${tableName}, error } = await supabase
+
+  const { data: ${tableName}, error } = await supabase
     .from('${tableName}')
     .select('*')
     .order('date', { ascending: true });
-    
-    if (error) {
-        throw new Error(\`An error occured retreiving data \${error.message}\`)
-    }
-    return ${tableName};
+  
+  if (error instanceof Error) {
+    throw new Error(\`An error occured retreiving data \${error.message}\`)
+  }
+  return ${tableName};
 }
 `.trim();
 
