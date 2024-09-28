@@ -6,7 +6,7 @@ import * as supabaseConnection from './utils/supabaseConnection.js';
 import * as opProvider from './utils/opProvider.js';
 import path from 'path';
 import process from 'process';
-import ora from 'ora';
+import getTableSchema from './utils/getTableSchema.js';
 
 process.removeAllListeners('warning');
 
@@ -73,8 +73,11 @@ export default class Supacrud extends Command {
       }
 
       const table = flags.table || await this.promptForTable();
-      this.log(chalk.blue(`You've selected the "${table}" table.`));
-
+      if (!await getTableSchema(table)) {
+        throw new Error(`Could not find table ${table}`)
+      } else {
+        this.log(chalk.blue(`You've selected the "${table}" table.`));
+      }
       const ops: string[] = [];
       if (flags.all) ops.push('all');
       if (flags.create) ops.push('create');

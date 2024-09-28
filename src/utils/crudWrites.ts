@@ -8,7 +8,6 @@ function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-
 const generateSupabaseClientCode = (config: Config): string => {
   if (config.env && config.prefix) {
     return `const supabase = createClient(process.env.${config.prefix.projectUrl}, process.env.${config.prefix.apiKey});`;
