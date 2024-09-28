@@ -4,7 +4,7 @@ import path from 'path';
 import getTableSchema from './getTableSchema.js';
 import { Config } from './configManager.js';
 
-function capitalizeFirstLetter(string: string): string {
+const capitalizeFirstLetter = (string: string): string => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
@@ -36,6 +36,7 @@ export const createFileName = async (tableName: string, opName: string): Promise
     }
   }
 }
+
 export const createOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const schema = await getTableSchema(tableName);
