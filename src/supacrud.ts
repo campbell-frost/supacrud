@@ -76,7 +76,7 @@ export default class Supacrud extends Command {
       if (!await getTableSchema(table)) {
         throw new Error(`Could not find table ${table}`)
       } else {
-        this.log(chalk.blue(`You've selected the "${table}" table.`));
+        this.log(chalk.blue(`You've selected the "${table}" table.\n`));
       }
       const ops: string[] = [];
       if (flags.all) ops.push('all');
@@ -98,7 +98,12 @@ export default class Supacrud extends Command {
       this.log(chalk.yellow('\nHappy CRUDing! 🚀'));
     } catch (error) {
       if (error instanceof Error) {
-        this.log(chalk.red('An error occurred: ', error.message));
+        if (error.message.includes('User force closed the prompt')) {
+          this.log(chalk.yellow('\nExited supacrud. Goodbye! 👋'));
+          this.exit(0);
+        } else {
+          this.log(chalk.red('An error occurred: ', error.message));
+        }
       }
     }
   }
