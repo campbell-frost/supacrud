@@ -55,7 +55,7 @@ export const createOps = async (tableName: string, config: Config): Promise<void
     }
 
     const singularTableName = singularize(tableName);
-    const formattedTableName = capitalizeFirstLetter(singularize(tableName));
+    const formattedTableName = capitalizeFirstLetter(singularTableName);
     const createInterface = Object.entries(schema.Row)
       .filter(([key]) => key !== 'created_at')
       .map(([key, type]) => `  ${key}: ${type};`)
@@ -87,7 +87,7 @@ ${data}
     .insert(data)
     .single();
   
-  if (error instanceof Error) {
+  if (error != null) {
     throw new Error(\`Error adding data: \${error.message}\`);
   }
 
@@ -105,21 +105,28 @@ ${data}
 
 export const readOps = async (tableName: string, config: Config): Promise<void> => {
   try {
-    const formattedTableName = capitalizeFirstLetter(tableName);
+    const singularTableName = singularize(tableName);
+    const formattedTableName = capitalizeFirstLetter(singularTableName);
     const filePath = await createFileName(tableName, 'read');
     const supabaseClientCode = generateSupabaseClientCode(config);
 
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
-export const read${formattedTableName} = async () => {
+interface Read${formattedTableName}Request {
+  id: string;
+}
+
+export const read${formattedTableName} = async (${singularTableName}: Read${formattedTableName}Request) => {
   ${supabaseClientCode}
 
   const { data, error } = await supabase
     .from('${tableName}')
-    .select('*');
+    .select('*')
+    .eq('id', ${singularTableName}.id)
+    .single();
 
-  if (error instanceof Error) {
+  if (error != null) {
     throw new Error(\`Error reading data: \${error.message}\`);
   }
   
@@ -139,7 +146,7 @@ export const updateOps = async (tableName: string, config: Config): Promise<void
   try {
 
     const singularTableName = singularize(tableName);
-    const formattedTableName = capitalizeFirstLetter(singularize(tableName));
+    const formattedTableName = capitalizeFirstLetter(singularTableName);
 
     const schema = await getTableSchema(tableName);
     if (!schema) {
@@ -170,7 +177,7 @@ export const update${formattedTableName} = async (${singularTableName}: Update${
     .eq('id', ${singularTableName}.id)
     .select();
   
-  if (error instanceof Error) {
+  if (error != null) {
     throw new Error(\`Error uploading data: \${error.message}\`);
   }
 
@@ -189,7 +196,7 @@ export const update${formattedTableName} = async (${singularTableName}: Update${
 export const deleteOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const singularTableName = singularize(tableName);
-    const formattedTableName = capitalizeFirstLetter(singularize(tableName));
+    const formattedTableName = capitalizeFirstLetter(singularTableName);
 
     const filePath = await createFileName(tableName, 'delete');
     const supabaseClientCode = generateSupabaseClientCode(config);
@@ -209,7 +216,7 @@ export const delete${formattedTableName} = async (${singularTableName}: Delete${
     .delete()
     .eq('id', ${singularTableName}.id);
 
-  if (error instanceof Error) {
+  if (error != null) {
     throw new Error(\`Error deleting data: \${error.message}\`);
   }
 
@@ -243,7 +250,7 @@ export const get${formattedTableName} = async () => {
     .select('*')
     .order('date', { ascending: true });
   
-  if (error instanceof Error) {
+  if (error != null) {
     throw new Error(\`An error occured retreiving data \${error.message}\`)
   }
 
