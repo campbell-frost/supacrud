@@ -5,8 +5,6 @@ export interface CrudOperation {
   execute(): Promise<void>;
 }
 
-
-
 export const getOperation = (
   operation: string,
   table: string,
