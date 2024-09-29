@@ -8,6 +8,16 @@ const capitalizeFirstLetter = (string: string): string => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+const singularize = (noun: string): string => {
+  if (noun.endsWith('s')) {
+    if (noun.endsWith('ies')) {
+      return noun.slice(0, -3) + 'y';
+    }
+    return noun.slice(0, -1);
+  }
+  return noun;
+}
+
 const generateSupabaseClientCode = (config: Config): string => {
   if (config.env && config.prefix) {
     return `const supabaseUrl = process.env.${config.prefix.projectUrl};
@@ -44,14 +54,16 @@ export const createOps = async (tableName: string, config: Config): Promise<void
       throw new Error(`Schema for table '${tableName}' not found.`);
     }
 
-    const formattedTableName = capitalizeFirstLetter(tableName);
+    const singularTableName = singularize(tableName);
+    const formattedTableName = capitalizeFirstLetter(singularize(tableName));
     const createInterface = Object.entries(schema.Row)
+      .filter(([key]) => key !== 'created_at')
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
 
     const data = Object.entries(schema.Row)
-      .filter(([key]) => key !== 'id')
-      .map(([key]) => `    ${key}: new${formattedTableName}.${key},`)
+      .filter(([key]) => key !== 'created_at')
+      .map(([key]) => `    ${key}: ${singularTableName}.${key},`)
       .join('\n');
 
     const filePath = await createFileName(tableName, 'create');
@@ -59,18 +71,18 @@ export const createOps = async (tableName: string, config: Config): Promise<void
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
-interface Create${formattedTableName}Props {
+interface Create${formattedTableName}Request {
 ${createInterface}
 }
 
-export const create${formattedTableName} = async (new${formattedTableName}: Create${formattedTableName}Props) => {
+export const create${formattedTableName} = async (${singularTableName}: Create${formattedTableName}Request) => {
   ${supabaseClientCode}
   const data = {
 ${data}
-  }
+  };
 
   const { error } = await supabase
-    .from('trips')
+    .from("${tableName}")
     .insert(data)
     .single();
   
@@ -124,32 +136,35 @@ export const read${formattedTableName} = async () => {
 export const updateOps = async (tableName: string, config: Config): Promise<void> => {
   try {
 
+    const singularTableName = singularize(tableName);
+    const formattedTableName = capitalizeFirstLetter(singularize(tableName));
+
     const schema = await getTableSchema(tableName);
     if (!schema) {
       throw new Error(`Schema for table '${tableName}' not found.`);
     }
 
     const updateInterface = Object.entries(schema.Row)
+      .filter(([key]) => key !== 'created_at')
       .map(([key, type]) => `  ${key}: ${type};`)
       .join('\n');
 
-    const formattedTableName = capitalizeFirstLetter(tableName);
     const filePath = await createFileName(tableName, 'update');
     const supabaseClientCode = generateSupabaseClientCode(config);
 
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
-interface update${formattedTableName}Props {
+interface Update${formattedTableName}Request {
 ${updateInterface}
 }
 
-export const update${formattedTableName} = async (updated${formattedTableName}: update${formattedTableName}Props) => {
+export const update${formattedTableName} = async (${singularTableName}: Update${formattedTableName}Request) => {
   ${supabaseClientCode}
   const { data: result, error } = await supabase
     .from('${tableName}')
-    .update(updated${formattedTableName})
-    .eq('id', updated${formattedTableName}.id)
+    .update(${singularTableName})
+    .eq('id', ${singularTableName}.id)
     .select();
   
   if (error instanceof Error) {
@@ -169,21 +184,27 @@ export const update${formattedTableName} = async (updated${formattedTableName}: 
 
 export const deleteOps = async (tableName: string, config: Config): Promise<void> => {
   try {
-    const formattedTableName = capitalizeFirstLetter(tableName);
+    const singularTableName = singularize(tableName);
+    const formattedTableName = capitalizeFirstLetter(singularize(tableName));
+
     const filePath = await createFileName(tableName, 'delete');
     const supabaseClientCode = generateSupabaseClientCode(config);
 
     const content = `
 import { createClient } from "@supabase/supabase-js";
 
-interface delete${formattedTableName}Props {
+interface Delete${formattedTableName}Request {
   id: string;
 }
 
-export const delete${formattedTableName} = async (id: delete${formattedTableName}Props) => {
+export const delete${formattedTableName} = async (${singularTableName}: Delete${formattedTableName}Request) => {
   ${supabaseClientCode}
 
-  const { error } = await supabase.from('${tableName}').delete().eq('id', id);
+  const { error } = await supabase
+    .from('${tableName}')
+    .delete()
+    .eq('id', ${singularTableName}.id);
+
   if (error instanceof Error) {
     throw new Error(\`Error deleting data: \${error.message}\`);
   }
