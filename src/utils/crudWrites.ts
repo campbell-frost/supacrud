@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
-import getTableSchema from './getTableSchema.js';
+import { getTableSchema } from './getTableSchema.js';
 import { Config } from './configManager.js';
 
 const capitalizeFirstLetter = (string: string): string => {

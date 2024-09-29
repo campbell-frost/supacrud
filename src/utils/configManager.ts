@@ -28,7 +28,6 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
       let apiKeyPrefix: string | undefined = undefined;
       let apiKeyValue: string | undefined = undefined;
 
-
       for (const line of lines) {
         if (line.includes("supabase.co")) {
           [projectUrlPrefix, projectUrlValue] = line.split('=');

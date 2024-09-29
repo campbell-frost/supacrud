@@ -13,86 +13,124 @@ interface DatabaseSchema {
   [tableName: string]: TableSchema;
 }
 
-export default async function getTableSchema<T extends keyof DatabaseSchema>(tableName: T): Promise<DatabaseSchema[T] | null> {
-  const currentDir = process.cwd();
+function findTypesFile(currentDir: string): string | null {
   const typesPaths = [
     path.join(currentDir, 'types', 'supabase.ts'),
     path.join(currentDir, 'database.types.ts')
   ];
 
-  let fileFound = false;
-  let parsingError = false;
-
   for (const typesPath of typesPaths) {
-    try {
-      if (!fs.existsSync(typesPath)) {
-        continue; // File doesn't exist, try the next path
-      }
-
-      fileFound = true;
-      const file = fs.readFileSync(typesPath, 'utf-8');
-      const sourceFile = ts.createSourceFile(
-        path.basename(typesPath),
-        file,
-        ts.ScriptTarget.Latest,
-        true
-      );
-
-      function findTableInterface(node: ts.Node): ts.Node | undefined {
-        if (
-          ts.isPropertySignature(node) &&
-          ts.isIdentifier(node.name) &&
-          node.name.text.toLowerCase() === tableName.toString().toLowerCase() &&
-          node.parent &&
-          ts.isTypeLiteralNode(node.parent) &&
-          node.parent.parent &&
-          ts.isPropertySignature(node.parent.parent) &&
-          ts.isIdentifier(node.parent.parent.name) &&
-          node.parent.parent.name.text === 'Tables'
-        ) {
-          return node;
-        }
-        return ts.forEachChild(node, findTableInterface);
-      }
-
-      const tableNode = findTableInterface(sourceFile);
-      if (tableNode && ts.isPropertySignature(tableNode) && tableNode.type && ts.isTypeLiteralNode(tableNode.type)) {
-        const rowProperty = tableNode.type.members.find(member =>
-          ts.isPropertySignature(member) &&
-          ts.isIdentifier(member.name) &&
-          member.name.text === 'Row'
-        );
-        if (rowProperty && ts.isPropertySignature(rowProperty) && rowProperty.type && ts.isTypeLiteralNode(rowProperty.type)) {
-          const rowObject: Record<string, string | undefined> = {};
-          rowProperty.type.members.forEach(member => {
-            if (ts.isPropertySignature(member) && ts.isIdentifier(member.name)) {
-              const propertyName = member.name.text;
-              const propertyType = member.type ? member.type.getText(sourceFile) : 'any';
-              rowObject[propertyName] = propertyType;
-            }
-          });
-          const schema: DatabaseSchema[T] = {
-            Row: rowObject,
-            Insert: rowObject,
-            Update: rowObject,
-          };
-          return schema;
-        }
-      }
-    } catch (error) {
-      parsingError = true;
-      console.error(chalk.yellow(`Error parsing file ${typesPath}:`, error));
+    if (fs.existsSync(typesPath)) {
+      return typesPath;
     }
   }
 
-  if (!fileFound) {
+  return null;
+}
+
+function parseTypesFile(filePath: string): ts.SourceFile {
+  const file = fs.readFileSync(filePath, 'utf-8');
+  return ts.createSourceFile(
+    path.basename(filePath),
+    file,
+    ts.ScriptTarget.Latest,
+    true
+  );
+}
+
+export function getAllTables(currentDir: string): string[] {
+  const typesFile = findTypesFile(currentDir);
+  if (!typesFile) {
     console.error(chalk.red(`No types files found. Have you run 'supabase gen types'?`));
-    console.error(chalk.yellow(`You can get started here: https://supabase.com/docs/guides/api/rest/generating-types`))
-  } else if (parsingError) {
-    console.error(chalk.red(`Error occurred while parsing the types file(s).`));
-  } else {
-    console.error(chalk.red(`Table '${tableName}' or its Row interface not found in any of the types files.`));
+    console.error(chalk.yellow(`You can get started here: https://supabase.com/docs/guides/api/rest/generating-types`));
+    return [];
   }
 
+  const sourceFile = parseTypesFile(typesFile);
+  const tables: string[] = [];
+
+  function findTablesInterface(node: ts.Node): void {
+    if (
+      ts.isPropertySignature(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === 'Tables' &&
+      node.type &&
+      ts.isTypeLiteralNode(node.type)
+    ) {
+      node.type.members.forEach(member => {
+        if (ts.isPropertySignature(member) && ts.isIdentifier(member.name)) {
+          tables.push(member.name.text);
+        }
+      });
+    }
+    ts.forEachChild(node, findTablesInterface);
+  }
+
+  findTablesInterface(sourceFile);
+  return tables;
+}
+
+export async function getTableSchema<T extends keyof DatabaseSchema>(
+  tableName: T,
+): Promise<DatabaseSchema[T] | null> {
+  const typesFile = findTypesFile(process.cwd());
+  if (!typesFile) {
+    console.error(chalk.red(`No types files found. Have you run 'supabase gen types'?`));
+    console.error(chalk.yellow(`You can get started here: https://supabase.com/docs/guides/api/rest/generating-types`));
+    return null;
+  }
+
+  try {
+    const sourceFile = parseTypesFile(typesFile);
+
+    function findTableInterface(node: ts.Node): ts.Node | undefined {
+      if (
+        ts.isPropertySignature(node) &&
+        ts.isIdentifier(node.name) &&
+        node.name.text.toLowerCase() === tableName.toString().toLowerCase() &&
+        node.parent &&
+        ts.isTypeLiteralNode(node.parent) &&
+        node.parent.parent &&
+        ts.isPropertySignature(node.parent.parent) &&
+        ts.isIdentifier(node.parent.parent.name) &&
+        node.parent.parent.name.text === 'Tables'
+      ) {
+        return node;
+      }
+      return ts.forEachChild(node, findTableInterface);
+    }
+
+    const tableNode = findTableInterface(sourceFile);
+    if (tableNode && ts.isPropertySignature(tableNode) && tableNode.type && ts.isTypeLiteralNode(tableNode.type)) {
+      const schema: DatabaseSchema[T] = {
+        Row: {},
+        Insert: {},
+        Update: {},
+      };
+
+      tableNode.type.members.forEach(member => {
+        if (ts.isPropertySignature(member) && ts.isIdentifier(member.name)) {
+          const propertyName = member.name.text;
+          if (['Row', 'Insert', 'Update'].includes(propertyName) && member.type && ts.isTypeLiteralNode(member.type)) {
+            const obj: Record<string, string | undefined> = {};
+            member.type.members.forEach(subMember => {
+              if (ts.isPropertySignature(subMember) && ts.isIdentifier(subMember.name)) {
+                const subPropertyName = subMember.name.text;
+                const subPropertyType = subMember.type ? subMember.type.getText(sourceFile) : 'any';
+                obj[subPropertyName] = subPropertyType;
+              }
+            });
+            schema[propertyName as keyof TableSchema] = obj;
+          }
+        }
+      });
+
+      return schema;
+    }
+  } catch (error) {
+    console.error(chalk.yellow(`Error parsing file ${typesFile}:`, error));
+  }
+
+  console.error(chalk.red(`Table '${tableName}' not found in the types file.`));
   return null;
 }

@@ -1,4 +1,4 @@
-import { input, select } from '@inquirer/prompts';
+import { select } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import chalk from 'chalk';
 import * as configManager from './utils/configManager.js';
@@ -6,7 +6,7 @@ import * as supabaseConnection from './utils/supabaseConnection.js';
 import * as opProvider from './utils/opProvider.js';
 import path from 'path';
 import process from 'process';
-import getTableSchema from './utils/getTableSchema.js';
+import { getTableSchema, getAllTables } from './utils/getTableSchema.js';
 
 process.removeAllListeners('warning');
 
@@ -32,10 +32,16 @@ export default class Supacrud extends Command {
     'set-creds': Flags.boolean({ char: 's', description: 'Update your Supabase credentials', required: false }),
   };
 
-  async promptForTable(): Promise<string> {
-    return input({
-      message: 'Enter the name of the table you want to work with:',
-      validate: (value: string) => value.trim() !== '' || 'Table name cannot be empty',
+  async promptForTable(configDir: string): Promise<string> {
+    const tables = getAllTables(configDir);
+
+    if (tables.length === 0) {
+      throw new Error('No tables found in the types file.');
+    }
+
+    return select({
+      message: 'Select a table to work with:',
+      choices: tables.map(table => ({ value: table, name: table })),
     });
   }
 
@@ -72,12 +78,13 @@ export default class Supacrud extends Command {
         return;
       }
 
-      const table = flags.table || await this.promptForTable();
+      const table = flags.table || await this.promptForTable(process.cwd());
       if (!await getTableSchema(table)) {
         throw new Error(`Could not find table ${table}`)
       } else {
         this.log(chalk.blue(`You've selected the "${table}" table.\n`));
       }
+
       const ops: string[] = [];
       if (flags.all) ops.push('all');
       if (flags.create) ops.push('create');
