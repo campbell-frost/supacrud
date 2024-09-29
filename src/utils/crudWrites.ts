@@ -30,7 +30,7 @@ const generateSupabaseClientCode = (config: Config): string => {
 
 export const createFileName = async (tableName: string, opName: string): Promise<string> => {
   const currentPath = process.cwd();
-  const destinationDir = path.join(currentPath, 'data', tableName);
+  const destinationDir = path.join(currentPath, 'data', tableName.toLowerCase());
   const destinationPath = path.join(destinationDir, `${opName}.ts`);
   try {
     await fs.promises.mkdir(destinationDir, { recursive: true });
@@ -77,6 +77,7 @@ ${createInterface}
 
 export const create${formattedTableName} = async (${singularTableName}: Create${formattedTableName}Request) => {
   ${supabaseClientCode}
+
   const data = {
 ${data}
   };
@@ -89,6 +90,7 @@ ${data}
   if (error instanceof Error) {
     throw new Error(\`Error adding data: \${error.message}\`);
   }
+
   return { success: true };
 }
 `.trim();
@@ -161,6 +163,7 @@ ${updateInterface}
 
 export const update${formattedTableName} = async (${singularTableName}: Update${formattedTableName}Request) => {
   ${supabaseClientCode}
+
   const { data: result, error } = await supabase
     .from('${tableName}')
     .update(${singularTableName})
@@ -170,6 +173,7 @@ export const update${formattedTableName} = async (${singularTableName}: Update${
   if (error instanceof Error) {
     throw new Error(\`Error uploading data: \${error.message}\`);
   }
+
   return result;
 }
 `.trim();
@@ -242,6 +246,7 @@ export const get${formattedTableName} = async () => {
   if (error instanceof Error) {
     throw new Error(\`An error occured retreiving data \${error.message}\`)
   }
+
   return ${tableName};
 }
 `.trim();
