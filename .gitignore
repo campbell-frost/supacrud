@@ -14,3 +14,4 @@ supabase
 data/
 types/
 dist/
+tsconfig.tsbuildinfo

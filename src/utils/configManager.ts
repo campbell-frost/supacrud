@@ -34,7 +34,9 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
           break;
         }
       }
-
+      if (!projectUrlValue || !projectUrlPrefix) {
+        return null;
+      }
       for (const line of lines) {
         if (isJwt(line.split("=")[1])) {
           const jwt = decodeJwt(line.split("=")[1])
@@ -45,7 +47,9 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
           }
         }
       }
-
+      if (!apiKeyValue || !apiKeyPrefix) {
+        return null;
+      }
       return {
         env: true,
         prefix: {
@@ -59,7 +63,7 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
       };
 
     } catch (error) {
-      if (error.code !== 'ENOENT') {
+      if (error instanceof Error && "code" in error && error.code !== 'ENOENT') {
         return null;
       }
     }
@@ -68,13 +72,7 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
   return null;
 };
 
-const decodeJwt = (jwt: string): string => {
-  try {
-    return jwt.split(".").map((s, i) => i < 2 ? atob(s.replace("-", "+").replace("_", "/")) : s).toString();
-  } catch (error) {
-    console.log(error);
-  }
-}
+const decodeJwt = (jwt: string): string => jwt.split(".").map((s, i) => i < 2 ? atob(s.replace("-", "+").replace("_", "/")) : s).toString();
 
 const isJwt = (token: string): boolean => {
   const parts = token.split('.');

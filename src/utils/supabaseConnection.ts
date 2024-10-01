@@ -24,7 +24,7 @@ const getOrSetConfig = async (configDir: string): Promise<configManager.Config> 
   let config = await configManager.getConfig(configDir);
   if (!config.suffix.projectUrl || !config.suffix.apiKey) {
     const envConfig = await configManager.findEnvConfig(process.cwd());
-    if (envConfig.suffix.projectUrl && envConfig.suffix.apiKey) {
+    if (envConfig != null && envConfig.suffix.projectUrl && envConfig.suffix.apiKey) {
       await configManager.saveConfig(configDir, envConfig);
       return envConfig;
     } else {

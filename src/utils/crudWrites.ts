@@ -95,6 +95,7 @@ export const createOps = async (tableName: string, config: Config): Promise<void
 
     const filePath = await createFileName(tableName, 'create');
     const supabaseClientCode = generateSupabaseClientCode(config);
+
     const content = `
 import { createClient } from "@supabase/supabase-js";
 import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
@@ -265,7 +266,6 @@ export const list${formattedTableName} = async ():Promise<${formattedTableName}S
     }
   }
 }
-
 
 export const allOps = async (tableName: string, config: Config): Promise<void> => {
   await createOps(tableName, config);
