@@ -88,7 +88,7 @@ ${data}
     .single();
   
   if (error != null) {
-    throw new Error(\`An error occured creating new record into ${tableName}: \${error.message}\`);
+    throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`);
   }
 
   return { success: true };
