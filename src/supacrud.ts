@@ -7,6 +7,7 @@ import * as opProvider from './utils/opProvider.js';
 import path from 'path';
 import process from 'process';
 import { getTableSchema, getAllTables } from './utils/getTableSchema.js';
+import { createSchema } from './utils/crudWrites.js';
 
 process.removeAllListeners('warning');
 
@@ -60,6 +61,7 @@ export default class Supacrud extends Command {
   }
 
   async performCRUDOperation(table: string, config: configManager.Config): Promise<void> {
+    await createSchema(table);
     const operation = await this.selectCrudOperation();
     const crudOperation = opProvider.getOperation(operation, table, config);
     await crudOperation.execute();

@@ -28,7 +28,7 @@ const generateSupabaseClientCode = (config: Config): string => {
   }
 };
 
-export const createFileName = async (tableName: string, opName: string): Promise<string> => {
+const createFileName = async (tableName: string, opName: string): Promise<string> => {
   const currentPath = process.cwd();
   const destinationDir = path.join(currentPath, 'data', tableName.toLowerCase());
   const destinationPath = path.join(destinationDir, `${opName}.ts`);
@@ -47,6 +47,37 @@ export const createFileName = async (tableName: string, opName: string): Promise
   }
 }
 
+export const createSchema = async (tableName: string): Promise<void> => {
+  try {
+    const schema = await getTableSchema(tableName);
+    if (!schema) {
+      throw new Error(`Schema for table '${tableName}' not found.`);
+    }
+
+    const singularTableName = singularize(tableName);
+    const formattedTableName = capitalizeFirstLetter(singularTableName);
+
+    const createType = Object.entries(schema.Row)
+      .filter(([key]) => key !== 'created_at')
+      .map(([key, type]) => `  ${key}: ${type};`)
+      .join('\n');
+
+    const content =
+      `
+export type ${formattedTableName}Schema = {
+${createType}
+}
+    `.trim();
+    const filePath = await createFileName(tableName, `${singularTableName}Schema`);
+    await fs.promises.writeFile(filePath, content);
+    console.log(chalk.green(`Create operation file created successfully at ${filePath}`));
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(chalk.red(`Error creating create operation file: ${error.message}`));
+    }
+  }
+}
+
 export const createOps = async (tableName: string, config: Config): Promise<void> => {
   try {
     const schema = await getTableSchema(tableName);
@@ -56,10 +87,6 @@ export const createOps = async (tableName: string, config: Config): Promise<void
 
     const singularTableName = singularize(tableName);
     const formattedTableName = capitalizeFirstLetter(singularTableName);
-    const createInterface = Object.entries(schema.Row)
-      .filter(([key]) => key !== 'created_at')
-      .map(([key, type]) => `  ${key}: ${type};`)
-      .join('\n');
 
     const data = Object.entries(schema.Row)
       .filter(([key]) => key !== 'created_at')
@@ -70,12 +97,9 @@ export const createOps = async (tableName: string, config: Config): Promise<void
     const supabaseClientCode = generateSupabaseClientCode(config);
     const content = `
 import { createClient } from "@supabase/supabase-js";
+import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 
-interface Create${formattedTableName}Request {
-${createInterface}
-}
-
-export const create${formattedTableName} = async (${singularTableName}: Create${formattedTableName}Request) => {
+export const create${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema) => {
   ${supabaseClientCode}
 
   const data = {
@@ -84,14 +108,11 @@ ${data}
 
   const { error } = await supabase
     .from("${tableName}")
-    .insert(data)
-    .single();
+    .insert(data);
   
   if (error != null) {
-    throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`);
+    throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`, { cause: error });
   }
-
-  return { success: true };
 }
 `.trim();
     await fs.promises.writeFile(filePath, content);
@@ -107,27 +128,25 @@ export const readOps = async (tableName: string, config: Config): Promise<void> 
   try {
     const singularTableName = singularize(tableName);
     const formattedTableName = capitalizeFirstLetter(singularTableName);
-    const filePath = await createFileName(tableName, 'read');
+
+    const filePath = await createFileName(tableName, 'get');
     const supabaseClientCode = generateSupabaseClientCode(config);
 
     const content = `
 import { createClient } from "@supabase/supabase-js";
+import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 
-interface Read${formattedTableName}Request {
-  id: string;
-}
-
-export const read${formattedTableName} = async (${singularTableName}: Read${formattedTableName}Request) => {
+export const get${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema | string): Promise<${formattedTableName}Schema> => {
   ${supabaseClientCode}
 
   const { data, error } = await supabase
     .from('${tableName}')
     .select('*')
-    .eq('id', ${singularTableName}.id)
+    .eq('id', typeof ${singularTableName} === "string" ? test : ${singularTableName}.id)    
     .single();
 
   if (error != null) {
-    throw new Error(\`An error occured reading entry from ${tableName}: \${error.message}\`);
+    throw new Error(\`An error occured getting entry from ${tableName}: \${error.message}\`, { cause: error });
   }
   
   return data;
@@ -144,44 +163,28 @@ export const read${formattedTableName} = async (${singularTableName}: Read${form
 
 export const updateOps = async (tableName: string, config: Config): Promise<void> => {
   try {
-
     const singularTableName = singularize(tableName);
     const formattedTableName = capitalizeFirstLetter(singularTableName);
-
-    const schema = await getTableSchema(tableName);
-    if (!schema) {
-      throw new Error(`Schema for table '${tableName}' not found.`);
-    }
-
-    const updateInterface = Object.entries(schema.Row)
-      .filter(([key]) => key !== 'created_at')
-      .map(([key, type]) => `  ${key}: ${type};`)
-      .join('\n');
 
     const filePath = await createFileName(tableName, 'update');
     const supabaseClientCode = generateSupabaseClientCode(config);
 
     const content = `
 import { createClient } from "@supabase/supabase-js";
+import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 
-interface Update${formattedTableName}Request {
-${updateInterface}
-}
-
-export const update${formattedTableName} = async (${singularTableName}: Update${formattedTableName}Request) => {
+export const update${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema) => {
   ${supabaseClientCode}
 
-  const { data: result, error } = await supabase
+  const { error } = await supabase
     .from('${tableName}')
     .update(${singularTableName})
     .eq('id', ${singularTableName}.id)
     .select();
   
   if (error != null) {
-    throw new Error(\`An error occured updating entry in ${tableName}: \${error.message}\`);
+    throw new Error(\`An error occured updating entry in ${tableName}: \${error.message}\`, { cause: error });
   }
-
-  return result;
 }
 `.trim();
     await fs.promises.writeFile(filePath, content);
@@ -203,12 +206,9 @@ export const deleteOps = async (tableName: string, config: Config): Promise<void
 
     const content = `
 import { createClient } from "@supabase/supabase-js";
+import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 
-interface Delete${formattedTableName}Request {
-  id: string;
-}
-
-export const delete${formattedTableName} = async (${singularTableName}: Delete${formattedTableName}Request) => {
+export const delete${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema) => {
   ${supabaseClientCode}
 
   const { error } = await supabase
@@ -217,10 +217,8 @@ export const delete${formattedTableName} = async (${singularTableName}: Delete${
     .eq('id', ${singularTableName}.id);
 
   if (error != null) {
-    throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`);
+    throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`, { cause: error });
   }
-
-  return { success: true };
 }
 `.trim();
     await fs.promises.writeFile(filePath, content);
@@ -234,30 +232,31 @@ export const delete${formattedTableName} = async (${singularTableName}: Delete${
 
 export const listOps = async (tableName: string, config: Config): Promise<void> => {
   try {
-    const formattedTableName = capitalizeFirstLetter(tableName);
+    const singularTableName = singularize(tableName);
+    const formattedTableName = capitalizeFirstLetter(singularTableName);
+
     const filePath = await createFileName(tableName, 'list');
     const supabaseClientCode = generateSupabaseClientCode(config);
 
     const content =
       `
 import { createClient } from "@supabase/supabase-js";
+import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 
-export const get${formattedTableName} = async () => {
+export const list${formattedTableName} = async ():Promise<${formattedTableName}Schema[]> => {
   ${supabaseClientCode}
 
-  const { data: ${tableName}, error } = await supabase
+  const { data, error } = await supabase
     .from('${tableName}')
-    .select('*')
-    .order('date', { ascending: true });
+    .select('*');
   
   if (error != null) {
-    throw new Error(\`An error occured listing data from ${tableName}: \${error.message}\`)
+    throw new Error(\`An error occured listing data from ${tableName}: \${error.message}\`, { cause: error });
   }
 
-  return ${tableName};
+  return data;
 }
 `.trim();
-
     await fs.promises.writeFile(filePath, content);
     console.log(chalk.green(`List operation file created successfully at ${filePath}`));
   } catch (error) {
