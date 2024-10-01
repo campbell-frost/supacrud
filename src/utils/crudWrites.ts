@@ -88,7 +88,7 @@ ${data}
     .single();
   
   if (error != null) {
-    throw new Error(\`Error adding data: \${error.message}\`);
+    throw new Error(\`An error occured creating new record into ${tableName}: \${error.message}\`);
   }
 
   return { success: true };
@@ -127,7 +127,7 @@ export const read${formattedTableName} = async (${singularTableName}: Read${form
     .single();
 
   if (error != null) {
-    throw new Error(\`Error reading data: \${error.message}\`);
+    throw new Error(\`An error occured reading entry from ${tableName}: \${error.message}\`);
   }
   
   return data;
@@ -178,7 +178,7 @@ export const update${formattedTableName} = async (${singularTableName}: Update${
     .select();
   
   if (error != null) {
-    throw new Error(\`Error uploading data: \${error.message}\`);
+    throw new Error(\`An error occured updating entry in ${tableName}: \${error.message}\`);
   }
 
   return result;
@@ -217,7 +217,7 @@ export const delete${formattedTableName} = async (${singularTableName}: Delete${
     .eq('id', ${singularTableName}.id);
 
   if (error != null) {
-    throw new Error(\`Error deleting data: \${error.message}\`);
+    throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`);
   }
 
   return { success: true };
@@ -251,7 +251,7 @@ export const get${formattedTableName} = async () => {
     .order('date', { ascending: true });
   
   if (error != null) {
-    throw new Error(\`An error occured retreiving data \${error.message}\`)
+    throw new Error(\`An error occured listing data from ${tableName}: \${error.message}\`)
   }
 
   return ${tableName};
@@ -274,5 +274,4 @@ export const allOps = async (tableName: string, config: Config): Promise<void> =
   await updateOps(tableName, config);
   await deleteOps(tableName, config);
   await listOps(tableName, config);
-  console.log(chalk.green(`All CRUD operation files generated for table: ${tableName}`));
 }
