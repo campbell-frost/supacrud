@@ -103,13 +103,9 @@ import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 export const create${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema) => {
   ${supabaseClientCode}
 
-  const data = {
-${data}
-  };
-
   const { error } = await supabase
     .from("${tableName}")
-    .insert(data);
+    .insert(${singularTableName});
   
   if (error != null) {
     throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`, { cause: error });
@@ -143,7 +139,7 @@ export const get${formattedTableName} = async (${singularTableName}: ${formatted
   const { data, error } = await supabase
     .from('${tableName}')
     .select('*')
-    .eq('id', typeof ${singularTableName} === "string" ? test : ${singularTableName}.id)    
+    .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)    
     .single();
 
   if (error != null) {
@@ -209,13 +205,13 @@ export const deleteOps = async (tableName: string, config: Config): Promise<void
 import { createClient } from "@supabase/supabase-js";
 import { ${formattedTableName}Schema } from "./${singularTableName}Schema";
 
-export const delete${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema) => {
+export const delete${formattedTableName} = async (${singularTableName}: ${formattedTableName}Schema | string) => {
   ${supabaseClientCode}
 
   const { error } = await supabase
     .from('${tableName}')
     .delete()
-    .eq('id', ${singularTableName}.id);
+    .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)    
 
   if (error != null) {
     throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`, { cause: error });
