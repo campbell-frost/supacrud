@@ -13,5 +13,6 @@ oclif.manifest.json
 supabase
 data/
 types/
-dist/
 tsconfig.tsbuildinfo
+dist/
+.vscode/

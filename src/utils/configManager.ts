@@ -17,7 +17,7 @@ export type Config = {
 
 export const findEnvConfig = async (rootDir: string): Promise<Config | null> => {
   const files = await fs.promises.readdir(rootDir);
-  const envFiles = files.filter(file => file.startsWith('.env') || file.startsWith('.env.'));
+  const envFiles = files.filter(file => file.startsWith('.env'));
   for (const file of envFiles) {
     const filePath = path.join(rootDir, file);
     try {
@@ -31,11 +31,12 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
       for (const line of lines) {
         if (line.includes("supabase.co")) {
           [projectUrlPrefix, projectUrlValue] = line.split('=');
+          
           break;
         }
       }
       if (!projectUrlValue || !projectUrlPrefix) {
-        return null;
+        continue;
       }
       for (const line of lines) {
         if (isJwt(line.split("=")[1])) {
@@ -48,7 +49,7 @@ export const findEnvConfig = async (rootDir: string): Promise<Config | null> => 
         }
       }
       if (!apiKeyValue || !apiKeyPrefix) {
-        return null;
+        continue;
       }
       return {
         env: true,
