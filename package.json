@@ -1,6 +1,6 @@
 {
   "name": "supacrud",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
   },
   "author": "Campbell Frost",
   "license": "MIT",
-  "description": "Generate CRUD ops for typescript supabase projects",
+  "description": "Generate CRUD ops for TypeScript Supabase projects",
   "type": "module",
   "dependencies": {
     "@oclif/core": "^4.0.12",
