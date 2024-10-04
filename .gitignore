@@ -15,4 +15,6 @@ data/
 types/
 tsconfig.tsbuildinfo
 dist/
+*.d.ts
 .vscode/
+tsconfig.json

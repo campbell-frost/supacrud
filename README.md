@@ -71,21 +71,16 @@ supacrud supports the following operations:
 3. **Read**: View existing records and table structure
 4. **Update**: Modify existing records in the table
 5. **Delete**: Remove records from the table
+6. **List**: List all records in a table
 
 For each table, supacrud generates corresponding .ts files in the `data/<table-name>/` directory containing the CRUD operations for that table.
-
-## First-Time Setup (current implementation)
-
-When you run supacrud for the first time, it will prompt you to enter your Supabase project URL and API key. These credentials will be stored locally for future use.
-
-In the future, supacrud will infer the Supabase project URL and API key from local storage if `supabase login` has been run.
 
 ## Configuration
 
 supacrud stores its configuration in:
 
 ```
-~/.config/supacrud/config.json
+~/.config/supacrud/<projectName>/config.json
 ```
 
 This file contains your Supabase credentials.
