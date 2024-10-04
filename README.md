@@ -20,7 +20,7 @@ supacrud [OPTIONS]
 
 ### Options
 
-- `-t, --table <table-name>`: Specify the table name to perform CRUD operations on.
+- `-t, --table <table-name>`: Specify the table name to perform CRUD operations on. If not provided, you can select from a dropdown of existing tables in your database.
 - `-a, --all`: Generate all CRUD operations.
 - `-c, --create`: Generate create operation.
 - `-r, --read`: Generate read operation.
@@ -28,9 +28,9 @@ supacrud [OPTIONS]
 - `-d, --delete`: Generate delete operation.
 - `-s, --set-creds`: Update your Supabase credentials.
 
-### Example
+### Examples
 
-Run supacrud with no options:
+Run supacrud with no options to select a table from your supabase database:
 ```bash
 supacrud
 ```
@@ -80,7 +80,7 @@ For each table, supacrud generates corresponding .ts files in the `data/<table-n
 supacrud stores its configuration in:
 
 ```
-~/.config/supacrud/<projectName>/config.json
+~/.config/supacrud/<project-name>/config.json
 ```
 
 This file contains your Supabase credentials.
