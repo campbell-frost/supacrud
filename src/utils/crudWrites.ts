@@ -108,7 +108,7 @@ export const create${formattedTableName} = async (${singularTableName}: ${format
     .insert(${singularTableName});
   
   if (error != null) {
-    throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`, { cause: error });
+    throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`);
   }
 }
 `.trim();
@@ -143,7 +143,7 @@ export const get${formattedTableName} = async (${singularTableName}: ${formatted
     .single();
 
   if (error != null) {
-    throw new Error(\`An error occured getting entry from ${tableName}: \${error.message}\`, { cause: error });
+    throw new Error(\`An error occured getting entry from ${tableName}: \${error.message}\`);
   }
   
   return data;
@@ -180,7 +180,7 @@ export const update${formattedTableName} = async (${singularTableName}: ${format
     .select();
   
   if (error != null) {
-    throw new Error(\`An error occured updating entry in ${tableName}: \${error.message}\`, { cause: error });
+    throw new Error(\`An error occured updating entry in ${tableName}: \${error.message}\`);
   }
 }
 `.trim();
@@ -214,7 +214,7 @@ export const delete${formattedTableName} = async (${singularTableName}: ${format
     .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)    
 
   if (error != null) {
-    throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`, { cause: error });
+    throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`);
   }
 }
 `.trim();
@@ -248,7 +248,7 @@ export const list${formattedTableName} = async ():Promise<${formattedTableName}S
     .select('*');
   
   if (error != null) {
-    throw new Error(\`An error occured listing data from ${tableName}: \${error.message}\`, { cause: error });
+    throw new Error(\`An error occured listing data from ${tableName}: \${error.message}\`);
   }
 
   return data;
