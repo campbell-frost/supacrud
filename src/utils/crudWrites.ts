@@ -106,7 +106,7 @@ export const create${formattedTableName} = async (${singularTableName}: ${format
   const { error } = await supabase
     .from("${tableName}")
     .insert(${singularTableName});
-  
+
   if (error != null) {
     throw new Error(\`An error occured creating new entry into ${tableName}: \${error.message}\`);
   }
@@ -139,13 +139,13 @@ export const get${formattedTableName} = async (${singularTableName}: ${formatted
   const { data, error } = await supabase
     .from('${tableName}')
     .select('*')
-    .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)    
+    .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)
     .single();
 
   if (error != null) {
     throw new Error(\`An error occured getting entry from ${tableName}: \${error.message}\`);
   }
-  
+
   return data;
 }
 `.trim();
@@ -178,7 +178,7 @@ export const update${formattedTableName} = async (${singularTableName}: ${format
     .update(${singularTableName})
     .eq('id', ${singularTableName}.id)
     .select();
-  
+
   if (error != null) {
     throw new Error(\`An error occured updating entry in ${tableName}: \${error.message}\`);
   }
@@ -211,7 +211,7 @@ export const delete${formattedTableName} = async (${singularTableName}: ${format
   const { error } = await supabase
     .from('${tableName}')
     .delete()
-    .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)    
+    .eq('id', typeof ${singularTableName} === "string" ? ${singularTableName} : ${singularTableName}.id)
 
   if (error != null) {
     throw new Error(\`An error occured deleting entry from ${tableName}: \${error.message}\`);
@@ -246,7 +246,7 @@ export const list${formattedTableName} = async ():Promise<${formattedTableName}S
   const { data, error } = await supabase
     .from('${tableName}')
     .select('*');
-  
+
   if (error != null) {
     throw new Error(\`An error occured listing data from ${tableName}: \${error.message}\`);
   }
